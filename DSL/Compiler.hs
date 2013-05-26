@@ -112,7 +112,7 @@ instance Monad m => DSL (VarM m) where
     copy idx t1
     copy src t0
 
-    switcher init $ do
+    switch init >> do
       unsafeBF ">>"
       unsafeBF "[[>>]+[<<]>>-]"
       unsafeBF "+[>>]<[-]<[<<]"
@@ -127,7 +127,7 @@ instance Monad m => DSL (VarM m) where
     zero t1
     copy idx t1
 
-    switcher init $ do
+    switch init >> do
       unsafeBF ">>"
       unsafeBF "[[>>]+[<<]>>-]"
       unsafeBF "+[>>]<"
@@ -141,7 +141,8 @@ instance Monad m => DSL (VarM m) where
       unsafeBF "[>[>>]<+<[<<]>-]"
       unsafeBF ">[>>]<<[-<<]"
 
-  while v act = switcher v $
+  while v act = do
+    switch v
     pass $ do
       act
       switch v
@@ -157,7 +158,8 @@ mkArr n = do
   modify (second $ const mem')
   return arr
 
-zeroArray (Array initVar _ _ n) = switcher initVar $
+zeroArray (Array initVar _ _ n) = do
+  switch initVar
   replicateM_ (arrSize n) $ do
     zeroUnsafe
     succ
