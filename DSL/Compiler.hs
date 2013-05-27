@@ -134,7 +134,9 @@ instance Monad m => DSL (VarM m) where
 
       whileUnsafe $ do
         unsafeBF "<[<<]>+<"
-        switcher dst $ incUnsafe
+        switch dst
+        incUnsafe
+        switch init
         unsafeBF ">>[>>]<-"
 
       unsafeBF "<[<<]>"
@@ -158,6 +160,7 @@ mkArr n = do
   modify (second $ const mem')
   return arr
 
+zeroArray :: Monad m => Array -> VarM m ()
 zeroArray (Array initVar _ _ n) = do
   switch initVar
   replicateM_ (arrSize n) $ do
@@ -212,13 +215,6 @@ switch (Var n1) = do
   let dir True  = succ
       dir False = pred
   replicateM_ (abs $ n1-n2) (dir (n1 > n2))
-
-switcher :: Monad m => Var -> VarM m a -> VarM m ()
-switcher v act = do
-  (old_v,_) <- get
-  switch v
-  act
-  switch old_v
 
 putcharUnsafe, getcharUnsafe :: Monad m => VarM m ()
 putcharUnsafe = tell [PutChar]
