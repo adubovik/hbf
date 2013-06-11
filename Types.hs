@@ -1,4 +1,33 @@
-module Types(Command(..), optBF) where
+{-# language
+   TypeFamilies #-}
+
+module Types where
+
+import DSL
+
+data Var = Var Int
+         | ArrT0 Int
+         | ArrT1 Int
+         | ArrInit Int
+         deriving (Show, Eq)
+data Arr = Arr Var Int deriving Show
+
+ptrOfVar :: Var -> Int
+ptrOfVar (Var     i) = i
+ptrOfVar (ArrInit i) = i+0
+ptrOfVar (ArrT0   i) = i+1
+ptrOfVar (ArrT1   i) = i+2
+
+opVar :: (Int -> Int) -> (Var -> Var)
+opVar f (Var i) = Var (f i)
+
+instance Variable Var where
+  type Array Var = Arr
+  arrInit   (Arr (Var i) _) = ArrInit i
+  arrT0     (Arr (Var i) _) = ArrT0 i
+  arrT1     (Arr (Var i) _) = ArrT1 i
+  arrLength (Arr _ n)       = n
+  arrMake                   = Arr
 
 data Command = Succ | Pred |
                Inc | Dec |

@@ -29,18 +29,6 @@ type MemoryState = Set.Set Int
 type VarM m = StateT (Var, MemoryState)
               (WriterT [Command] m)
 
-data Var = Var Int | ArrT0 Var | ArrT1 Var | ArrInit Var
-
-ptrOfVar (Var i) = i
-ptrOfVar (ArrInit (Var i)) = i
-ptrOfVar (ArrT0 (Var i)) = i+1
-ptrOfVar (ArrT1 (Var i)) = i+2
-
-opVar :: (Int -> Int) -> (Var -> Var)
-opVar f (Var i) = Var (f i)
-
-data Arr = Arr Var Int
-
 arrSize :: Int -> Int
 arrSize n = 2*n + 3
 
@@ -78,14 +66,6 @@ delArray (Arr (Var initCell) n) mem =
 
 -------------------------------------------------
 -- Base DSL
-
-instance Variable Var where
-  type Array Var = Arr
-  arrInit   (Arr v _) = ArrInit v
-  arrT0     (Arr v _) = ArrT0 v
-  arrT1     (Arr v _) = ArrT1 v
-  arrLength (Arr _ n) = n
-  arrMake             = Arr
 
 instance Monad m => DSL (VarM m) where
   type VarD   (VarM m) = Var
