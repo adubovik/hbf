@@ -2,7 +2,9 @@
    NoMonomorphismRestriction
  , TypeFamilies
  , TypeSynonymInstances
- , FlexibleInstances #-}
+ , FlexibleInstances
+ , ViewPatterns
+ , ScopedTypeVariables #-}
 
 module DSL.Compiler where
 
@@ -15,8 +17,6 @@ import Data.Char
 import qualified Data.Set as Set
 
 import Types
-import Utils
-import Parser
 
 import DSL
 import DSL.Lib
@@ -29,14 +29,17 @@ type MemoryState = Set.Set Int
 type VarM m = StateT (Var, MemoryState)
               (WriterT [Command] m)
 
-data Var = Var Int
+data Var = Var Int | ArrT0 Var | ArrT1 Var | ArrInit Var
+
+ptrOfVar (Var i) = i
+ptrOfVar (ArrInit (Var i)) = i
+ptrOfVar (ArrT0 (Var i)) = i+1
+ptrOfVar (ArrT1 (Var i)) = i+2
 
 opVar :: (Int -> Int) -> (Var -> Var)
 opVar f (Var i) = Var (f i)
 
-data Array = Array { headPtr   :: Var
-                   , t0, t1    :: Var
-                   , arrLength :: Int }
+data Arr = Arr Var Int
 
 arrSize :: Int -> Int
 arrSize n = 2*n + 3
@@ -56,7 +59,7 @@ delVariable :: Var -> MemoryState -> MemoryState
 delVariable (Var cell) mem =
   Set.delete cell mem
 
-mkArray :: Int -> MemoryState -> (Array, MemoryState)
+mkArray :: Int -> MemoryState -> (Arr, MemoryState)
 mkArray n mem = (arr, mem')
   where
     m = arrSize n
@@ -64,13 +67,11 @@ mkArray n mem = (arr, mem')
     arrCands'= filter (not . any (`Set.member` mem)) arrCands
     arrCells = head arrCands'
     initCell = head arrCells
-    arr      = Array (Var $ initCell+0)
-                     (Var $ initCell+1)
-                     (Var $ initCell+2) n
+    arr      = Arr (Var initCell) n
     mem'     = mem <> (Set.fromList arrCells)
 
-delArray :: Array -> MemoryState -> MemoryState
-delArray (Array (Var initCell) _ _ n) mem =
+delArray :: Arr -> MemoryState -> MemoryState
+delArray (Arr (Var initCell) n) mem =
   let str = initCell
       end = str + arrSize n - 1
   in  mem `Set.difference` Set.fromList [str,end]
@@ -78,9 +79,16 @@ delArray (Array (Var initCell) _ _ n) mem =
 -------------------------------------------------
 -- Base DSL
 
+instance Variable Var where
+  type Array Var = Arr
+  arrInit   (Arr v _) = ArrInit v
+  arrT0     (Arr v _) = ArrT0 v
+  arrT1     (Arr v _) = ArrT1 v
+  arrLength (Arr _ n) = n
+  arrMake             = Arr
+
 instance Monad m => DSL (VarM m) where
   type VarD   (VarM m) = Var
-  type ArrayD (VarM m) = Array
   
   localArr n f = do
     tmp <- mkArr n
@@ -94,54 +102,17 @@ instance Monad m => DSL (VarM m) where
     delVar tmp
     return x
 
+  switch (ptrOfVar -> n1) = do
+    (ptrOfVar -> n2,_) <- get
+    let dir True  = succ
+        dir False = pred
+    replicateM_ (abs $ n1-n2) (dir (n1 > n2))
+
   dec v = switch v >> tell [Dec]
   inc v = switch v >> tell [Inc]
 
   putchar v = switch v >> tell [PutChar]
   getchar v = switch v >> tell [GetChar]
-
-  -- Look at
-  -- http://esolangs.org/wiki/brainfuck_algorithms#x.28y.29_.3D_z_.281-d_array.29_.282_cells.2Farray_element.29
-  -- for reference
-  -- 
-  -- arr(idx) = src
-  -- FIXME: handle out of array bounds error
-  setArrayCell idx src (Array init t0 t1 _) = do
-    zero t0
-    zero t1
-    copy idx t1
-    copy src t0
-
-    switch init >> do
-      unsafeBF ">>"
-      unsafeBF "[[>>]+[<<]>>-]"
-      unsafeBF "+[>>]<[-]<[<<]"
-      unsafeBF ">[>[>>]<+<[<<]>-]"
-      unsafeBF ">[>>]<<[-<<]"
-
-  -- http://esolangs.org/wiki/brainfuck_algorithms#x_.3D_y.28z.29_.281-d_array.29_.282_cells.2Farray_element.29
-  -- dest = arr(idx)          
-  getArrayCell dst idx (Array init t0 t1 _) = do
-    zero dst
-    zero t0
-    zero t1
-    copy idx t1
-
-    switch init >> do
-      unsafeBF ">>"
-      unsafeBF "[[>>]+[<<]>>-]"
-      unsafeBF "+[>>]<"
-
-      whileUnsafe $ do
-        unsafeBF "<[<<]>+<"
-        switch dst
-        incUnsafe
-        switch init
-        unsafeBF ">>[>>]<-"
-
-      unsafeBF "<[<<]>"
-      unsafeBF "[>[>>]<+<[<<]>-]"
-      unsafeBF ">[>>]<<[-<<]"
 
   while v act = do
     switch v
@@ -150,52 +121,44 @@ instance Monad m => DSL (VarM m) where
       switch v
       return ((), return . While)
 
+  decU = tell [Dec]
+  incU = tell [Inc]
+
+  putcharU = tell [PutChar]
+  getcharU = tell [GetChar]
+
+  succU = tell [Succ]
+  predU = tell [Pred]
+
+  whileU act =
+    pass $ do
+      act
+      return ((), return . While)
+
 -------------------------------------------------
 -- Array machinary
 
-mkArr :: Monad m => Int -> VarM m Array
+mkArr :: Monad m => Int -> VarM m Arr
 mkArr n = do
   (_,mem) <- get
   let (arr,mem') = mkArray n mem
   modify (second $ const mem')
   return arr
 
-zeroArray :: Monad m => Array -> VarM m ()
-zeroArray (Array initVar _ _ n) = do
-  switch initVar
-  replicateM_ (arrSize n) $ do
+zeroArray :: (Monad m) => Arr -> VarM m ()
+zeroArray (Arr ptr n) = do
+  switch ptr
+  replicateM_ n $ do
     zeroUnsafe
     succ
 
-delArr :: Monad m => Array -> VarM m ()
+delArr :: Monad m => Arr -> VarM m ()
 delArr arr = do
   zeroArray arr
   modify (second $ delArray arr)
 
-unsafeBF :: Monad m => String -> VarM m ()
-unsafeBF prog = 
-  case comm of
-    Left e      -> error $ "Error: " ++ show e
-    Right prog' -> commandToDSL prog'
-  where
-    comm = parseBF prog
-    commandToDSL = mapM_ f
-      where
-        f Pred = predUnsafe
-        f Succ = succUnsafe
-        f Inc  = incUnsafe
-        f Dec  = decUnsafe
-        f GetChar = getcharUnsafe
-        f PutChar = putcharUnsafe
-        f (While l) = whileUnsafe (commandToDSL l)
-
 -------------------------------------------------
 -- Rest
-
-curr :: Monad m => VarM m Var
-curr = do
-  (v,_) <- get
-  return v
 
 newVar :: Monad m => VarM m Var
 newVar = do
@@ -209,21 +172,6 @@ delVar v = do
   zero v
   modify (second $ delVariable v)
 
-switch :: Monad m => Var -> VarM m ()
-switch (Var n1) = do
-  (Var n2,_) <- get
-  let dir True  = succ
-      dir False = pred
-  replicateM_ (abs $ n1-n2) (dir (n1 > n2))
-
-putcharUnsafe, getcharUnsafe :: Monad m => VarM m ()
-putcharUnsafe = tell [PutChar]
-getcharUnsafe = tell [GetChar]
-
-decUnsafe, incUnsafe :: Monad m => VarM m ()
-decUnsafe = tell [Dec]
-incUnsafe = tell [Inc]
-
 succ, pred :: Monad m => VarM m ()
 succ = do
   tell [Succ]
@@ -232,19 +180,6 @@ pred = do
   tell [Pred]
   -- FIX: handle pointer out of bound (<0)
   modify (first $ opVar (+ negate 1))
-
-succUnsafe, predUnsafe :: Monad m => VarM m ()
-succUnsafe = tell [Succ]
-predUnsafe = tell [Pred]
-
-whileUnsafe :: Monad m => VarM m a -> VarM m ()
-whileUnsafe act =
-  pass $ do
-    act
-    return ((), return . While)
-
-zeroUnsafe :: Monad m => VarM m ()
-zeroUnsafe = whileUnsafe decUnsafe
 
 ------------- Frontend ---------
 

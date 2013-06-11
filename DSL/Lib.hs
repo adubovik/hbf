@@ -1,9 +1,17 @@
+{-# language
+   FlexibleContexts #-}
+
 module DSL.Lib where
 
 import Data.Char
 import Control.Monad
 
 import DSL
+
+-- for parsion only
+import Types
+--import Utils
+import Parser
 
 ----------- Very base ----------
 
@@ -115,7 +123,7 @@ mod2 v = do
     v -| tmp
     v -| tmp
 
-repeatCode :: (Monad r, DSL r) => Int -> r a -> r ()
+repeatCode :: (Monad r, DSL r) => Int -> r () -> r ()
 repeatCode n act = do
   localVar' "repeatCnt" $ \cnt -> do
     cnt +: n
@@ -173,3 +181,79 @@ encodeChar n = do
 
 encodeString :: (Monad r, DSL r) => r ()
 encodeString = repeatCode 26 (encodeChar 5)
+
+----- Array machinery -----
+
+--------------
+-- Small lib
+
+-- Look at
+-- http://esolangs.org/wiki/brainfuck_algorithms#x.28y.29_.3D_z_.281-d_array.29_.282_cells.2Farray_element.29
+-- for reference
+-- 
+-- arr(idx) = src
+-- FIXME: handle out of array bounds error
+-- idx -> src -> arr
+setArrayCell :: (Monad r, DSL r) => VarD r -> VarD r -> ArrayD r -> r ()
+setArrayCell idx src arr = do
+  zero $ arrT0 arr
+  zero $ arrT1 arr
+  copy idx $ arrT1 arr
+  copy src $ arrT0 arr
+
+  switch $ arrInit arr
+
+  unsafeBF ">>"
+  unsafeBF "[[>>]+[<<]>>-]"
+  unsafeBF "+[>>]<[-]<[<<]"
+  unsafeBF ">[>[>>]<+<[<<]>-]"
+  unsafeBF ">[>>]<<[-<<]"
+
+-- http://esolangs.org/wiki/brainfuck_algorithms#x_.3D_y.28z.29_.281-d_array.29_.282_cells.2Farray_element.29
+-- dest = arr(idx)          
+-- dst -> idx -> arr
+getArrayCell :: (Monad r, DSL r) => VarD r -> VarD r -> ArrayD r -> r ()
+getArrayCell dst idx arr = do
+  zero dst
+  zero $ arrT0 arr
+  zero $ arrT1 arr
+  copy idx $ arrT1 arr
+
+  switch $ arrInit arr
+
+  unsafeBF ">>"
+  unsafeBF "[[>>]+[<<]>>-]"
+  unsafeBF "+[>>]<"
+
+  whileU $ do
+    unsafeBF "<[<<]>+<"
+    switch dst
+    incU
+    switch $ arrInit arr
+    unsafeBF ">>[>>]<-"
+
+  unsafeBF "<[<<]>"
+  unsafeBF "[>[>>]<+<[<<]>-]"
+  unsafeBF ">[>>]<<[-<<]"
+
+zeroUnsafe :: DSL m => m ()
+zeroUnsafe = whileU decU
+
+-----
+
+unsafeBF :: (DSL m, Monad m) => String -> m ()
+unsafeBF prog = 
+  case comm of
+    Left e      -> error $ "unsafeBF: " ++ show e
+    Right prog' -> commandToDSL prog'
+  where
+    comm = parseBF prog
+    commandToDSL = mapM_ f
+      where
+        f Pred = predU
+        f Succ = succU
+        f Inc  = incU
+        f Dec  = decU
+        f GetChar = getcharU
+        f PutChar = putcharU
+        f (While l) = whileU (commandToDSL l)

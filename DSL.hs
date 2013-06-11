@@ -1,28 +1,39 @@
 {-# LANGUAGE
-   TypeFamilies #-}
+   TypeFamilies
+ , FlexibleContexts #-}
 
 module DSL where
 
-class DSL r where
+class Variable r where
+  type Array r :: *
+  arrT0, arrT1, arrInit :: Array r -> r
+  arrLength :: Array r -> Int
+  arrMake :: r -> Int -> Array r
+
+type ArrayD r = Array (VarD r)
+
+class Variable (VarD r) => DSL r where
   type   VarD r :: *
-  type ArrayD r :: *
   
-  localVar ::        (  VarD r -> r a) -> r a
-  localArr :: Int -> (ArrayD r -> r a) -> r a
+  localVar ::        (  VarD r -> r ()) -> r ()
+  localArr :: Int -> (ArrayD r -> r ()) -> r ()
 
   -- annotated versions
-  localVar' :: String ->        (  VarD r -> r a) -> r a
+  localVar' :: String ->        (  VarD r -> r ()) -> r ()
   localVar' = const localVar
   
-  localArr' :: String -> Int -> (ArrayD r -> r a) -> r a
+  localArr' :: String -> Int -> (ArrayD r -> r ()) -> r ()
   localArr' = const localArr
 
   inc, dec :: VarD r -> r ()
   putchar, getchar :: VarD r -> r ()
 
-  -- idx -> src -> arr
-  setArrayCell :: VarD r -> VarD r -> ArrayD r -> r ()
-  -- dst -> idx -> arr
-  getArrayCell :: VarD r -> VarD r -> ArrayD r -> r ()
+  while :: VarD r -> r () -> r ()
 
-  while :: VarD r -> r a -> r ()
+  switch :: VarD r -> r ()
+
+  --- Unsafes
+  incU, decU :: r ()
+  predU, succU :: r ()
+  putcharU, getcharU :: r ()
+  whileU :: r a -> r ()
