@@ -9,7 +9,7 @@ data Var = Var Int
          | ArrT0 Int
          | ArrT1 Int
          | ArrInit Int
-         deriving (Show, Eq)
+         deriving (Show, Eq, Ord)
 data Arr = Arr Var Int deriving Show
 
 ptrOfVar :: Var -> Int
