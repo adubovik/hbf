@@ -12,8 +12,8 @@ class Variable r where
 
 type ArrayD r = Array (VarD r)
 
-class Variable (VarD r) => DSL r where
-  type   VarD r :: *
+class (Monad r, Variable (VarD r)) => DSL r where
+  type VarD r :: *
   
   localVar ::        (  VarD r -> r ()) -> r ()
   localArr :: Int -> (ArrayD r -> r ()) -> r ()
@@ -25,11 +25,7 @@ class Variable (VarD r) => DSL r where
   localArr' :: String -> Int -> (ArrayD r -> r ()) -> r ()
   localArr' = const localArr
 
-  inc, dec :: VarD r -> r ()
-  putchar, getchar :: VarD r -> r ()
-
   while :: VarD r -> r () -> r ()
-
   switch :: VarD r -> r ()
 
   --- Unsafes

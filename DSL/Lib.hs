@@ -7,35 +7,32 @@ import Data.Char
 import Control.Monad
 
 import DSL
-
--- for parsion only
 import Types
---import Utils
 import Parser
 
 ----------- Very base ----------
 
 infix 5 +:
-(+:) :: (Monad m, DSL m) => VarD m -> Int -> m ()
+(+:) :: DSL m => VarD m -> Int -> m ()
 v +: n = do
   let sign True  = inc v
       sign False = dec v
   replicateM_ (abs n) (sign (n>0))
 
-zero :: (Monad r, DSL r) => VarD r -> r ()
+zero :: DSL r => VarD r -> r ()
 zero v = while v (v +: (-1))
 
-add :: (Monad r, DSL r) => VarD r -> VarD r -> r ()
+add :: DSL r => VarD r -> VarD r -> r ()
 add src dst = while src $ do
   src +: (-1)
   dst +:   1
 
-mov :: (Monad m, DSL m) => VarD m -> VarD m -> m ()
+mov :: DSL m => VarD m -> VarD m -> m ()
 mov from to = do
   zero to
   add from to
 
-copy :: (Monad m, DSL m) => VarD m -> VarD m -> m ()
+copy :: DSL m => VarD m -> VarD m -> m ()
 copy from to = do
   zero to
   localVar' "copy_tmp" $ \tmp -> do
@@ -45,7 +42,7 @@ copy from to = do
       tmp  +:    1
     mov tmp from
 
-ifthen :: (Monad r, DSL r) => VarD r -> r a -> r b -> r ()
+ifthen :: DSL r => VarD r -> r a -> r b -> r ()
 ifthen v t f = do
   localVar' "ifthen_tmp" $ \tmp -> do
     tmp +: 1
@@ -61,13 +58,13 @@ ifthen v t f = do
 
 ----------- Advanced ----------
 
-printChar :: (Monad r, DSL r) => Char -> r ()
+printChar :: DSL r => Char -> r ()
 printChar c = do
   localVar' "prtChar_v" $ \v -> do
     v +: (ord c)
     putchar v
 
-(-|) :: (Monad r, DSL r) => VarD r -> VarD r -> r ()
+(-|) :: DSL r => VarD r -> VarD r -> r ()
 (-|) v n = do
   localVar' "abssub_n'" $ \n' -> do
     copy n n'
@@ -76,7 +73,7 @@ printChar c = do
       ifthen v (v +: (-1)) (return ())
 
 -- v := v `div` 2
-div2 :: (Monad r, DSL r) => VarD r -> r ()
+div2 :: DSL r => VarD r -> r ()
 div2 v = do
   localVar' "div2_tmp" $ \tmp -> do
     localVar' "div2_two" $ \two -> do
@@ -93,7 +90,7 @@ div2 v = do
 -- after : >0 d-n%d n%d n/d
 -- origin: [->-[>+>>]>[+[-<+>]>+>>]<<<<<]
 -- [n0- n1- n2+ { if n1 () else ([n2- n1+] n3+)} <<<<<]
-divmod :: (Monad r, DSL r) =>
+divmod :: DSL r =>
           VarD r -> VarD r -> VarD r -> VarD r -> r ()
 divmod n d r q =
   localVar' "div_n'" $ \n' -> do
@@ -115,7 +112,7 @@ divmod n d r q =
               q +: 1
 
 -- v := v `mod` 2
-mod2 :: (Monad r, DSL r) => VarD r -> r ()
+mod2 :: DSL r => VarD r -> r ()
 mod2 v = do
   localVar' "mod2_tmp" $ \tmp -> do
     copy v tmp
@@ -123,7 +120,7 @@ mod2 v = do
     v -| tmp
     v -| tmp
 
-repeatCode :: (Monad r, DSL r) => Int -> r () -> r ()
+repeatCode :: DSL r => Int -> r () -> r ()
 repeatCode n act = do
   localVar' "repeatCnt" $ \cnt -> do
     cnt +: n
@@ -131,12 +128,12 @@ repeatCode n act = do
       cnt +: (-1)
       act
 
-setVar :: (Monad m, DSL m) => VarD m -> Char -> m ()
+setVar :: DSL m => VarD m -> Char -> m ()
 setVar v c = do
   zero v
   v +: (ord c)
 
-binaryOutArr :: (Monad r, DSL r) => Int -> VarD r -> r ()
+binaryOutArr :: DSL r => Int -> VarD r -> r ()
 binaryOutArr n v = localArr' "binOut_arr" n $ \arr -> do
   localVar' "binOut_idx" $ \idx -> do
     repeatCode n $ do
@@ -157,7 +154,7 @@ binaryOutArr n v = localArr' "binOut_arr" n $ \arr -> do
           ifthen r (return ()) (c +: (ord '-' - ord '*'))
           putchar c
         
-binaryOutHavy :: (Monad r, DSL r) => Int -> VarD r -> r ()
+binaryOutHavy :: DSL r => Int -> VarD r -> r ()
 binaryOutHavy 0 v = return ()
 binaryOutHavy n v = do
   localVar' "binOut_r" $ \r -> do
@@ -168,10 +165,10 @@ binaryOutHavy n v = do
 
     ifthen r (printChar '*') (printChar '-')
 
-binaryOut :: (Monad r, DSL r) => Int -> VarD r -> r ()
+binaryOut :: DSL r => Int -> VarD r -> r ()
 binaryOut = binaryOutArr
 
-encodeChar :: (Monad r, DSL r) => Int -> r ()
+encodeChar :: DSL r => Int -> r ()
 encodeChar n = do
   localVar' "encChar_v" $ \v -> do
     getchar v
@@ -179,7 +176,7 @@ encodeChar n = do
     binaryOut n v
     printChar '\n'
 
-encodeString :: (Monad r, DSL r) => r ()
+encodeString :: DSL r => r ()
 encodeString = repeatCode 26 (encodeChar 5)
 
 ----- Array machinery -----
@@ -194,7 +191,7 @@ encodeString = repeatCode 26 (encodeChar 5)
 -- arr(idx) = src
 -- FIXME: handle out of array bounds error
 -- idx -> src -> arr
-setArrayCell :: (Monad r, DSL r) => VarD r -> VarD r -> ArrayD r -> r ()
+setArrayCell :: DSL r => VarD r -> VarD r -> ArrayD r -> r ()
 setArrayCell idx src arr = do
   zero $ arrT0 arr
   zero $ arrT1 arr
@@ -212,7 +209,7 @@ setArrayCell idx src arr = do
 -- http://esolangs.org/wiki/brainfuck_algorithms#x_.3D_y.28z.29_.281-d_array.29_.282_cells.2Farray_element.29
 -- dest = arr(idx)          
 -- dst -> idx -> arr
-getArrayCell :: (Monad r, DSL r) => VarD r -> VarD r -> ArrayD r -> r ()
+getArrayCell :: DSL r => VarD r -> VarD r -> ArrayD r -> r ()
 getArrayCell dst idx arr = do
   zero dst
   zero $ arrT0 arr
@@ -257,3 +254,11 @@ unsafeBF prog =
         f GetChar = getcharU
         f PutChar = putcharU
         f (While l) = whileU (commandToDSL l)
+
+inc, dec :: DSL r => VarD r -> r ()
+dec v = switch v >> decU
+inc v = switch v >> incU
+
+putchar, getchar :: DSL r => VarD r -> r ()
+putchar v = switch v >> putcharU
+getchar v = switch v >> putcharU

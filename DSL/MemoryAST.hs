@@ -19,32 +19,26 @@ import Control.Applicative
 import Control.Monad.Free
 import Control.Monad.State
 
+import Utils.Free
 import Types
 import DSL
 import DSL.Lib
-
-data ArOp = Inc | Dec deriving Show
-data IOOp = Put | Get deriving Show 
 
 data ASTF r = LocalVar     Var r r
             | LocalArr Int Arr r r
             | Switch Var Var r
             | Stop
             deriving (Functor, Traversable, Foldable, Show)
-                     
-type AST = Free ASTF
-type Stack = FreeT ASTF (State (Var, Int))
+
+type AST   = Free ASTF
+type Stack = FreeT ASTF
+               (State (Var, Int))
 
 liftF :: Functor f => f a -> Free f ()
 liftF = Impure . fmap (const $ return ())
 
 stop = wrap Stop
 stopped act = act >>= const stop
-
-instance (Functor f, MonadState s m) => MonadState s (FreeT f m) where
-  get   = lift get
-  put   = lift . put
-  state = lift . state
 
 instance DSL Stack where
   type VarD Stack = Var
@@ -66,12 +60,6 @@ instance DSL Stack where
     modify (first $ const v1)
     when (v1 /= v2) $ wrap $ Switch v1 v2 (trans $ return ())
     return ()
-
-  inc = switch
-  dec = switch
-    
-  putchar = switch
-  getchar = switch
   
   while v act = do
     switch v
@@ -84,6 +72,7 @@ instance DSL Stack where
   succU = return ()
   putcharU = return ()
   getcharU = return ()
+  
   whileU act = stopped act
 
 runStack :: Stack a -> AST a

@@ -1,5 +1,6 @@
 module DSL.MemoryManager(
-  mkMemoryMap
+   mkMemoryMap
+ , MemoryMap  
   ) where
 
 import qualified Data.Map as Map
