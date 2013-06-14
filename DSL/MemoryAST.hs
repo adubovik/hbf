@@ -60,12 +60,7 @@ instance DSL Stack where
     modify (first $ const v1)
     when (v1 /= v2) $ wrap $ Switch v1 v2 (trans $ return ())
     return ()
-  
-  while v act = do
-    switch v
-    act
-    switch v
-  
+    
   incU = return ()
   decU = return ()
   predU = return ()

@@ -261,4 +261,9 @@ inc v = switch v >> incU
 
 putchar, getchar :: DSL r => VarD r -> r ()
 putchar v = switch v >> putcharU
-getchar v = switch v >> putcharU
+getchar v = switch v >> getcharU
+
+while :: DSL r => VarD r -> r () -> r ()
+while v act = do
+  switch v
+  whileU (act >> switch v)

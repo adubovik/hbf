@@ -88,13 +88,6 @@ instance Monad m => DSL (VarM m) where
         dir False = pred
     replicateM_ (abs $ n1-n2) (dir (n1 > n2))
 
-  while v act = do
-    switch v
-    pass $ do
-      act
-      switch v
-      return ((), return . While)
-
   decU = tell [Dec]
   incU = tell [Inc]
 

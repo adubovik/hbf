@@ -25,7 +25,6 @@ class (Monad r, Variable (VarD r)) => DSL r where
   localArr' :: String -> Int -> (ArrayD r -> r ()) -> r ()
   localArr' = const localArr
 
-  while :: VarD r -> r () -> r ()
   switch :: VarD r -> r ()
 
   --- Unsafes
