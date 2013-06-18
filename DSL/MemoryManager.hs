@@ -10,8 +10,9 @@ import Control.Monad.State
 import Control.Monad.Writer
 
 import Types
-import DSL.MemoryAST
 
+import DSL
+import DSL.MemoryAST
 import DSL.Lib
 
 type MemoryMap   = Map.Map Var Int
@@ -40,7 +41,7 @@ delVariable (Var cell) mem =
 arrSize :: Int -> Int
 arrSize n = 2*n + 3
 
-newArray :: Int -> MemoryState -> (Arr, MemoryState)
+newArray :: Int -> MemoryState -> (Arr Var, MemoryState)
 newArray n mem = (arr, mem')
   where
     m = arrSize n
@@ -51,11 +52,14 @@ newArray n mem = (arr, mem')
     arr      = Arr (Var initCell) n
     mem'     = mem <> (Set.fromList arrCells)
 
-delArray :: Arr -> MemoryState -> MemoryState
+delArray :: Arr Var -> MemoryState -> MemoryState
 delArray (Arr (Var initCell) n) mem =
   let str = initCell
       end = str + arrSize n - 1
   in  mem `Set.difference` Set.fromList [str,end]
+
+----------------
+-- Runner
 
 mkMemoryMap :: Stack () -> MemoryMap
 mkMemoryMap = snd . runWriter . flip evalStateT Set.empty .
@@ -82,14 +86,14 @@ mkMemoryMap = snd . runWriter . flip evalStateT Set.empty .
     registerVar v (Var i) = tell (Map.singleton v i)
     registerArr (Arr v _) (Arr (Var i) _) = tell (Map.singleton v i)
 
-    newArr :: Int -> MemM Arr
+    newArr :: Int -> MemM (Arr Var)
     newArr n = do
       mem <- get
       let (arr,mem') = newArray n mem
       put mem'
       return arr
 
-    delArr :: Arr -> MemM ()
+    delArr :: Arr Var -> MemM ()
     delArr arr = do
       modify (delArray arr)
 

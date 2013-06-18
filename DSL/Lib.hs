@@ -189,7 +189,7 @@ encodeString = repeatCode 26 (encodeChar 5)
 -- for reference
 -- 
 -- arr(idx) = src
--- FIXME: handle out of array bounds error
+-- FIXME: handle array out of bounds error
 -- idx -> src -> arr
 setArrayCell :: DSL r => VarD r -> VarD r -> ArrayD r -> r ()
 setArrayCell idx src arr = do
@@ -233,27 +233,38 @@ getArrayCell dst idx arr = do
   unsafeBF "[>[>>]<+<[<<]>-]"
   unsafeBF ">[>>]<<[-<<]"
 
-zeroUnsafe :: DSL m => m ()
+zeroUnsafe :: DSL r => r ()
 zeroUnsafe = whileU decU
+
+zeroArray :: DSL r => ArrayD r -> r ()
+zeroArray arr = do
+  switch (arrInit arr)
+  replicateM_ (arrLength arr) $ do
+    zeroUnsafe
+    succU
+  replicateM_ (arrLength arr) $ do
+    predU
 
 -----
 
-unsafeBF :: (DSL m, Monad m) => String -> m ()
+unsafeBF :: DSL r => String -> r ()
 unsafeBF prog = 
   case comm of
     Left e      -> error $ "unsafeBF: " ++ show e
     Right prog' -> commandToDSL prog'
   where
     comm = parseBF prog
-    commandToDSL = mapM_ f
-      where
-        f Pred = predU
-        f Succ = succU
-        f Inc  = incU
-        f Dec  = decU
-        f GetChar = getcharU
-        f PutChar = putcharU
-        f (While l) = whileU (commandToDSL l)
+
+commandToDSL :: DSL r => [Command] -> r ()
+commandToDSL = mapM_ f
+  where
+    f Pred = predU
+    f Succ = succU
+    f Inc  = incU
+    f Dec  = decU
+    f GetChar = getcharU
+    f PutChar = putcharU
+    f (While l) = whileU (commandToDSL l)
 
 inc, dec :: DSL r => VarD r -> r ()
 dec v = switch v >> decU

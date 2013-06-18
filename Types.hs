@@ -10,23 +10,27 @@ data Var = Var Int
          | ArrT1 Int
          | ArrInit Int
          deriving (Show, Eq, Ord)
-data Arr = Arr Var Int deriving Show
 
-ptrOfVar :: Var -> Int
-ptrOfVar (Var     i) = i
-ptrOfVar (ArrInit i) = i+0
-ptrOfVar (ArrT0   i) = i+1
-ptrOfVar (ArrT1   i) = i+2
+normVar :: Var -> Var
+normVar (Var     i) = Var $ i
+normVar (ArrInit i) = Var $ i+0
+normVar (ArrT0   i) = Var $ i+1
+normVar (ArrT1   i) = Var $ i+2
+
+mapVar :: (Int -> Int) -> Var -> Var
+mapVar f (Var i) = Var $ f i
+mapVar f (ArrInit i) = ArrInit $ f i
+mapVar f (ArrT0 i) = ArrT0 $ f i
+mapVar f (ArrT1 i) = ArrT1 $ f i
 
 opVar :: (Int -> Int) -> (Var -> Var)
 opVar f (Var i) = Var (f i)
 
-instance Variable Var where
-  type Array Var = Arr
+instance ArrVar Var where
   arrInit   (Arr (Var i) _) = ArrInit i
   arrT0     (Arr (Var i) _) = ArrT0 i
   arrT1     (Arr (Var i) _) = ArrT1 i
-  arrLength (Arr _ n)       = n
+  arrLength (Arr _ n)       = 2*n+3
   arrMake                   = Arr
 
 data Command = Succ | Pred |

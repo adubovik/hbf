@@ -4,15 +4,16 @@
 
 module DSL where
 
-class Variable r where
-  type Array r :: *
-  arrT0, arrT1, arrInit :: Array r -> r
-  arrLength :: Array r -> Int
-  arrMake :: r -> Int -> Array r
+data Arr v = Arr v Int deriving Show
 
-type ArrayD r = Array (VarD r)
+class ArrVar r where
+  arrT0, arrT1, arrInit :: Arr r -> r
+  arrLength :: Arr r -> Int
+  arrMake :: r -> Int -> Arr r
 
-class (Monad r, Variable (VarD r)) => DSL r where
+type ArrayD r = Arr (VarD r)
+
+class (Monad r, ArrVar (VarD r)) => DSL r where
   type VarD r :: *
   
   localVar ::        (  VarD r -> r ()) -> r ()
@@ -27,8 +28,8 @@ class (Monad r, Variable (VarD r)) => DSL r where
 
   switch :: VarD r -> r ()
 
-  --- Unsafes
+  --- Essential BF commands
   incU, decU :: r ()
   predU, succU :: r ()
   putcharU, getcharU :: r ()
-  whileU :: r a -> r ()
+  whileU :: r () -> r ()

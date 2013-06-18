@@ -25,7 +25,7 @@ import DSL
 import DSL.Lib
 
 data ASTF r = LocalVar     Var r r
-            | LocalArr Int Arr r r
+            | LocalArr Int (Arr Var) r r
             | Switch Var Var r
             | Stop
             deriving (Functor, Traversable, Foldable, Show)
@@ -58,9 +58,8 @@ instance DSL Stack where
   switch v1 = do
     v2 <- fst <$> get
     modify (first $ const v1)
-    when (v1 /= v2) $ wrap $ Switch v1 v2 (trans $ return ())
-    return ()
-    
+    when (v1 /= v2) $ wrap $ Switch v2 v1 (trans $ return ())
+  
   incU = return ()
   decU = return ()
   predU = return ()
@@ -68,7 +67,7 @@ instance DSL Stack where
   putcharU = return ()
   getcharU = return ()
   
-  whileU act = stopped act
+  whileU act = act
 
 runStack :: Stack a -> AST a
 runStack st = evalState (untrans st) (Var 0, 0)

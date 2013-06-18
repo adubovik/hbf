@@ -4,7 +4,8 @@
  , TypeSynonymInstances
  , FlexibleInstances
  , ViewPatterns
- , ScopedTypeVariables #-}
+ , ScopedTypeVariables
+ , FlexibleContexts #-}
 
 module DSL.Compiler where
 
@@ -47,7 +48,7 @@ delVariable :: Var -> MemoryState -> MemoryState
 delVariable (Var cell) mem =
   Set.delete cell mem
 
-mkArray :: Int -> MemoryState -> (Arr, MemoryState)
+mkArray :: Int -> MemoryState -> (Arr Var, MemoryState)
 mkArray n mem = (arr, mem')
   where
     m = arrSize n
@@ -58,7 +59,7 @@ mkArray n mem = (arr, mem')
     arr      = Arr (Var initCell) n
     mem'     = mem <> (Set.fromList arrCells)
 
-delArray :: Arr -> MemoryState -> MemoryState
+delArray :: Arr Var -> MemoryState -> MemoryState
 delArray (Arr (Var initCell) n) mem =
   let str = initCell
       end = str + arrSize n - 1
@@ -82,8 +83,8 @@ instance Monad m => DSL (VarM m) where
     delVar tmp
     return x
 
-  switch (ptrOfVar -> n1) = do
-    (ptrOfVar -> n2,_) <- get
+  switch (normVar -> Var n1) = do
+    (normVar -> Var n2,_) <- get
     let dir True  = succ
         dir False = pred
     replicateM_ (abs $ n1-n2) (dir (n1 > n2))
@@ -105,21 +106,14 @@ instance Monad m => DSL (VarM m) where
 -------------------------------------------------
 -- Array machinary
 
-mkArr :: Monad m => Int -> VarM m Arr
+mkArr :: Monad m => Int -> VarM m (Arr Var)
 mkArr n = do
   (_,mem) <- get
   let (arr,mem') = mkArray n mem
   modify (second $ const mem')
   return arr
 
-zeroArray :: (Monad m) => Arr -> VarM m ()
-zeroArray (Arr ptr n) = do
-  switch ptr
-  replicateM_ n $ do
-    zeroUnsafe
-    succ
-
-delArr :: Monad m => Arr -> VarM m ()
+delArr :: Monad m => Arr Var -> VarM m ()
 delArr arr = do
   zeroArray arr
   modify (second $ delArray arr)
