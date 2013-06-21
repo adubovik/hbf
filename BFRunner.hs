@@ -4,18 +4,18 @@
 
 module Main where
 
-import Control.Applicative
+import Data.Char
 import System.Environment
 import Text.ParserCombinators.Parsec
-import Data.Char
+import Control.Applicative
 import Control.Monad
 
 import DSL
 import DSL.Lib
 import Parser
 
-import DSL.MainAST
-import DSL.Compiler2
+import DSL.AST.Base
+import DSL.Compiler
 import DSL.MemoryManager
 import DSL.Interpreter
 

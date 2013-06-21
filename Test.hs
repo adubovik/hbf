@@ -14,7 +14,7 @@ import Types
 
 import DSL
 import DSL.Lib
-import DSL.Compiler2
+import DSL.Compiler
 import DSL.Interpreter
 
 (~=?=) = flip (~=?)

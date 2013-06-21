@@ -17,7 +17,7 @@ import Control.Monad.InOutMonad
 import qualified Data.Map as Map
 import Data.Char
 
-import DSL.MainAST
+import DSL.AST.Base
 
 type Prog    = AST
 type Pointer = Int

@@ -9,7 +9,7 @@
  , UndecidableInstances
  , NoMonomorphismRestriction #-}
 
-module DSL.MainAST where
+module DSL.AST.Base where
 
 import qualified Data.Map as Map
 import Data.Traversable

@@ -9,7 +9,7 @@
  , UndecidableInstances
  , NoMonomorphismRestriction #-}
 
-module DSL.MemoryAST where
+module DSL.AST.Memory where
 
 import Data.Traversable
 import Data.Foldable

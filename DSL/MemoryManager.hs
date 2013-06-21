@@ -12,7 +12,7 @@ import Control.Monad.Writer
 import Types
 
 import DSL
-import DSL.MemoryAST
+import DSL.AST.Memory
 import DSL.Lib
 
 type MemoryMap   = Map.Map Var Int
