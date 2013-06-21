@@ -1,5 +1,7 @@
 {-# LANGUAGE
-   NoMonomorphismRestriction #-}
+   NoMonomorphismRestriction
+ , ExistentialQuantification
+ , RankNTypes #-}
 
 module Test(runTests) where
 
@@ -8,20 +10,17 @@ import Control.Monad
 import Control.Monad.Identity
 import Test.HUnit
 
+import Types
+
 import DSL
 import DSL.Lib
-import DSL.Compiler
-
-import StringInterpreter
-import Types
+import DSL.Compiler2
+import DSL.Interpreter
 
 (~=?=) = flip (~=?)
 
-runOn :: VarM Identity () -> (String -> String)
-runOn prog input = runBFM (interp $ commandToProg code) input
-    where
-      code :: [Command]
-      code = runIdentity $ runVarM prog
+runOn :: (forall r . DSL r => r ()) -> (String -> String)
+runOn prog = runDetBF (interp $ compile (Some prog))
 
 test1 = test
         ["const0_a" ~: t "a" ~=?= "0",
@@ -29,13 +28,12 @@ test1 = test
          "const0_0" ~: t "0" ~=?= "0"]
   where
     t = runOn prog
-    prog :: Monad m => VarM m ()
-    prog = do
-      a <- newVar
-      getchar a
-      zero a
-      a +: (ord '0')
-      putchar a
+    prog =
+      localVar $ \a -> do
+        getchar a
+        zero a
+        a +: (ord '0')
+        putchar a
 
 test2 = test
         ["inc_a" ~: t "a" ~=?= "b",
@@ -43,12 +41,11 @@ test2 = test
          "inc_5" ~: t "5" ~=?= "6"]
   where
     t = runOn prog
-    prog :: Monad m => VarM m ()
-    prog = do
-      a <- newVar
-      getchar a
-      a +: 1
-      putchar a
+    prog =
+      localVar $ \a -> do
+        getchar a
+        a +: 1
+        putchar a
 
 test3 = test
         ["div2_2" ~: t "2" ~=?= "1",
@@ -57,14 +54,13 @@ test3 = test
          "div2_9" ~: t "9" ~=?= "4"]
   where
     t = runOn prog
-    prog :: Monad m => VarM m ()
-    prog = do
-      a <- newVar
-      getchar a
-      a +: (- (ord '0'))
-      div2 a
-      a +: (ord '0')
-      putchar a
+    prog = 
+      localVar $ \a -> do
+        getchar a
+        a +: (- (ord '0'))
+        div2 a
+        a +: (ord '0')
+        putchar a
 
 test4 = test
         ["mod2_2" ~: t "2" ~=?= "0",
@@ -73,14 +69,13 @@ test4 = test
          "mod2_9" ~: t "9" ~=?= "1"]
   where
     t = runOn prog
-    prog :: Monad m => VarM m ()
-    prog = do
-      a <- newVar
-      getchar a
-      a +: (- (ord '0'))
-      mod2 a
-      a +: (ord '0')
-      putchar a
+    prog =
+      localVar $ \a -> do
+        getchar a
+        a +: (- (ord '0'))
+        mod2 a
+        a +: (ord '0')
+        putchar a
 
 brute c = go 5 c'
   where
@@ -102,7 +97,6 @@ test5 = test $ map mkTest "abcdefxyz"
                  [if even c then '-' else '*']
     
     t = runOn prog
-    prog :: Monad m => VarM m ()
     prog = encodeChar m
 
 test6 = test
@@ -113,22 +107,18 @@ test6 = test
          "98" ~: t "98" ~=?= "1"]
   where
     t = runOn prog
-    prog :: Monad m => VarM m ()
-    prog = do
-      a <- newVar
-      getchar a
-    
-      b <- newVar
-      getchar b
+    prog =
+      localVar $ \a -> do
+        getchar a
+        localVar $ \b -> do
+          getchar b
 
-      a +: (- (ord '0'))
-      b +: (- (ord '0'))
+          a +: (- (ord '0'))
+          b +: (- (ord '0'))
+          a -| b
+          a +: (ord '0')
 
-      a -| b
-
-      a +: (ord '0')
-
-      putchar a
+          putchar a
 
 test7 = test
         ["2" ~: t "2" ~=?= "22",
@@ -138,16 +128,13 @@ test7 = test
          "8" ~: t "8" ~=?= "88"]
   where
     t = runOn prog
-    prog :: Monad m => VarM m ()
     prog = do
-      a <- newVar
-      getchar a
-  
-      b <- newVar
-      copy a b
-
-      putchar b
-      putchar a
+      localVar $ \a -> do
+        getchar a
+        localVar $ \b -> do  
+          copy a b
+          putchar b
+          putchar a
 
 test8 = test
         ["23" ~: t "23" ~=?= "05",
@@ -158,22 +145,20 @@ test8 = test
          "10" ~: t "10" ~=?= "01"]
   where
     t = runOn prog
-    prog :: Monad m => VarM m ()
     prog = do
-      a <- newVar
-      getchar a
-      a +: (- (ord '0'))
-  
-      b <- newVar
-      getchar b
-      b +: (- (ord '0'))
+      localVar $ \a -> do
+        getchar a
+        a +: (- (ord '0'))
+        localVar $ \b -> do          
+          getchar b
+          b +: (- (ord '0'))
 
-      add a b
-  
-      a +: (ord '0')
-      b +: (ord '0')
-      putchar a
-      putchar b
+          add a b
+
+          a +: (ord '0')
+          b +: (ord '0')
+          putchar a
+          putchar b
 
 test9 = test
         [ "0"  ~: t 0 ""            ~=?= ""
@@ -184,20 +169,18 @@ test9 = test
         ]
   where
     t n = runOn (prog n)
-    prog :: Monad m => Int -> VarM m ()
     prog n = localArr n $ \arr -> do
-      x <- newVar
-      c <- newVar
+      localVar $ \x -> do
+        localVar $ \c -> do
+          repeatCode n $ do
+            getchar c
+            setArrayCell x c arr
+            x +: 1
 
-      repeatCode n $ do
-        getchar c
-        setArrayCell x c arr
-        x +: 1
-
-      repeatCode n $ do
-        x +: (-1)
-        getArrayCell c x arr
-        putchar c
+          repeatCode n $ do
+            x +: (-1)
+            getArrayCell c x arr
+            putchar c
 
 test10 = test
         [ "12"  ~: t "12" ~=?= "10"
@@ -208,7 +191,6 @@ test10 = test
         ]
   where
     t = runOn prog
-    prog :: Monad m => VarM m ()
     prog =
       localVar $ \n -> do
         localVar $ \d -> do

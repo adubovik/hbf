@@ -3,7 +3,7 @@
  , FlexibleInstances
  , UndecidableInstances #-}
 
-module Utils.Free where
+module Control.Monad.Free.Instances where
 
 import Control.Monad.Free
 import Control.Monad.State

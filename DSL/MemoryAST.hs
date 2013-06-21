@@ -18,8 +18,8 @@ import Control.Arrow
 import Control.Applicative
 import Control.Monad.Free
 import Control.Monad.State
+import Control.Monad.Free.Instances
 
-import Utils.Free
 import Types
 import DSL
 import DSL.Lib
