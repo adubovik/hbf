@@ -42,7 +42,7 @@ copy from to = do
       tmp  +:    1
     mov tmp from
 
-ifthen :: DSL r => VarD r -> r a -> r b -> r ()
+ifthen :: DSL r => VarD r -> r () -> r () -> r ()
 ifthen v t f = do
   localVar' "ifthen_tmp" $ \tmp -> do
     tmp +: 1
@@ -155,7 +155,7 @@ binaryOutArr n v = localArr' "binOut_arr" n $ \arr -> do
           putchar c
         
 binaryOutHavy :: DSL r => Int -> VarD r -> r ()
-binaryOutHavy 0 v = return ()
+binaryOutHavy 0 _ = return ()
 binaryOutHavy n v = do
   localVar' "binOut_r" $ \r -> do
     copy v r

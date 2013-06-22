@@ -1,6 +1,7 @@
 {-# language
    TypeSynonymInstances
  , FlexibleInstances
+ , FlexibleContexts
  , DeriveTraversable
  , DeriveFoldable
  , DeriveFunctor
@@ -9,19 +10,26 @@
  , UndecidableInstances
  , NoMonomorphismRestriction #-}
 
-module DSL.AST.Base where
+module DSL.AST.Base
+  ( ASTF(..)
+  , ArOp(..)
+  , IOOp(..)
+  , AST
+  , runStack
+  , pprintAST
+  )
+where
 
 import qualified Data.Map as Map
 import Data.Traversable
 import Data.Foldable
 import Data.Maybe
 
-import Control.Arrow
+import Control.Arrow hiding(arr)
 import Control.Applicative
 import Control.Monad.Free
 import Control.Monad.State
 import Control.Monad.Reader
-import Control.Monad.Free.Instances
 
 import Types hiding (Command(..))
 
@@ -53,8 +61,8 @@ pprintAST = foldFree (const "") pp
     pp (While a r) = "[" ++ a ++ "]" ++ r
     pp (Switch i r) = replicate (abs i) c ++ r
       where
-        c | i<=0 = '<'
-          | i> 0 = '>'
+        c | i<=0      = '<'
+          | otherwise = '>'
     pp Stop = ""
 
 type AST = Free ASTF
@@ -62,10 +70,13 @@ type Stack = FreeT ASTF
                (StateT (Var,Int)
                  (Reader MemoryMap))
 
-liftF :: Functor f => f a -> Free f ()
-liftF = Impure . fmap (const $ return ())
+-- liftF :: Functor f => f a -> Free f ()
+-- liftF = Impure . fmap (const $ return ())
 
+stop :: MonadFree ASTF m => m a
 stop = wrap Stop
+
+stopped :: MonadFree ASTF m => m a -> m b
 stopped act = act >>= const stop
 
 instance DSL Stack where

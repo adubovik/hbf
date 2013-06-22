@@ -1,6 +1,6 @@
 module DSL.MemoryManager(
    mkMemoryMap
- , MemoryMap  
+ , MemoryMap
   ) where
 
 import qualified Data.Map as Map
@@ -13,7 +13,6 @@ import Types
 
 import DSL
 import DSL.AST.Memory
-import DSL.Lib
 
 type MemoryMap   = Map.Map Var Int
 type MemoryState = Set.Set Int
@@ -35,6 +34,7 @@ newVariable mem = (var, mem')
 delVariable :: Var -> MemoryState -> MemoryState
 delVariable (Var cell) mem =
   Set.delete cell mem
+delVariable v _ = error $ "delVariable (" ++ show v ++ ") mem"
 
 ----------------------
 
@@ -57,6 +57,7 @@ delArray (Arr (Var initCell) n) mem =
   let str = initCell
       end = str + arrSize n - 1
   in  mem `Set.difference` Set.fromList [str,end]
+delArray arr _ = error $ "delArray (" ++ show arr ++ ") mem"
 
 ----------------
 -- Runner
@@ -84,7 +85,11 @@ mkMemoryMap = snd . runWriter . flip evalStateT Set.empty .
     alg Stop = return ()
 
     registerVar v (Var i) = tell (Map.singleton v i)
+    registerVar _ v' = error $ "registerVar v (" ++ show v' ++ ")"
+    
     registerArr (Arr v _) (Arr (Var i) _) = tell (Map.singleton v i)
+    registerArr a1 a2 = error $ "registerArr " ++ "(" ++ 
+                        show a1 ++ ")(" ++ show a2 ++ ")"
 
     newArr :: Int -> MemM (Arr Var)
     newArr n = do

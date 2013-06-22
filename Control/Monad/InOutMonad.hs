@@ -3,7 +3,13 @@
  , GeneralizedNewtypeDeriving
  #-}
 
-module Control.Monad.InOutMonad where
+module Control.Monad.InOutMonad
+  ( InOutMonad(..)
+  , DetIO(..)
+    
+  , execDetIO
+  )
+where
 
 import Control.Monad.State
 import Control.Monad.Writer

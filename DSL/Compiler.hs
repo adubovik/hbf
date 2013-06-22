@@ -2,10 +2,13 @@
    RankNTypes
  #-}
 
-module DSL.Compiler where
+module DSL.Compiler
+  ( compile
+  , Some(..)
+  )
+where
 
 import DSL
-import DSL.Lib
 import DSL.MemoryManager
 import DSL.AST.Base
 

@@ -5,10 +5,14 @@
  , NoMonomorphismRestriction
  #-}
 
-module DSL.Interpreter where
+module DSL.Interpreter
+  ( interp
+  , runIOBF
+  , runDetBF
+  )
+where
 
 import Control.Monad.State
-import Control.Monad.Writer
 import Control.Monad.Free
 import Control.Arrow
 import Control.Applicative
@@ -19,21 +23,25 @@ import Data.Char
 
 import DSL.AST.Base
 
-type Prog    = AST
 type Pointer = Int
 type Memory  = Map.Map Pointer Char
 
 type BFM m  = StateT (Pointer, Memory) m
 
+getPtr :: (Functor m, Monad m) => BFM m Pointer
 getPtr      = fst <$> get
+modifyMem :: (Functor m, Monad m) => (Memory -> Memory) -> BFM m ()
 modifyMem f = modify (second f)
+modifyPtr :: (Functor m, Monad m) => (Pointer -> Pointer) -> BFM m ()
 modifyPtr f = modify (first f)
 
+getVal :: (Functor m, Monad m) => BFM m Char
 getVal = do
   (p,m) <- get
   let val = Map.lookup p m
   return $ maybe (chr 0) id val
 
+putVal :: (Functor m, Monad m) => Char -> BFM m ()
 putVal c = do
   p <- getPtr
   modifyMem (Map.insert p c)

@@ -1,4 +1,7 @@
-module Utils where
+module Utils
+  ( dbgs
+  )
+where
 
 import Debug.Trace
 

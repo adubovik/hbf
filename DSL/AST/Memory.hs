@@ -1,6 +1,7 @@
 {-# language
    TypeSynonymInstances
  , FlexibleInstances
+ , FlexibleContexts
  , DeriveTraversable
  , DeriveFoldable
  , DeriveFunctor
@@ -9,22 +10,26 @@
  , UndecidableInstances
  , NoMonomorphismRestriction #-}
 
-module DSL.AST.Memory where
+module DSL.AST.Memory
+  ( ASTF(..)
+  , Stack
+  , runStack
+  )
+where
 
 import Data.Traversable
 import Data.Foldable
 
-import Control.Arrow
+import Control.Arrow hiding(arr)
 import Control.Applicative
 import Control.Monad.Free
 import Control.Monad.State
-import Control.Monad.Free.Instances
+import Control.Monad.Free.Instances()
 
 import Types
 import DSL
-import DSL.Lib
 
-data ASTF r = LocalVar     Var r r
+data ASTF r = LocalVar Var r r
             | LocalArr Int (Arr Var) r r
             | Switch Var Var r
             | Stop
@@ -34,10 +39,13 @@ type AST   = Free ASTF
 type Stack = FreeT ASTF
                (State (Var, Int))
 
-liftF :: Functor f => f a -> Free f ()
-liftF = Impure . fmap (const $ return ())
+-- liftF :: Functor f => f a -> Free f ()
+-- liftF = Impure . fmap (const $ return ())
 
+stop :: MonadFree ASTF m => m a
 stop = wrap Stop
+
+stopped :: MonadFree ASTF m => m a -> m b
 stopped act = act >>= const stop
 
 instance DSL Stack where

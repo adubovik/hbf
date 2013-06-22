@@ -4,8 +4,11 @@
  , GeneralizedNewtypeDeriving
  , ViewPatterns #-}
 
-
-module NestedStructure where
+module NestedStructure
+  ( NestedStructure(..)
+  , MonoidNest(..)
+  )
+where
 
 import Text.JSON
 import Data.Monoid
@@ -27,7 +30,6 @@ instance NestedStructure String where
   nullNode = mempty
   appendSibling = mappend
   node val child = intercalate "\n" $ (val:) $ map ("  "++) $ lines child
-
 
 -- Use awesome app jsoneditoronline.org to explore the structure
 instance NestedStructure JSValue where

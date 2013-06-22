@@ -6,22 +6,21 @@
 module Test(runTests) where
 
 import Data.Char
-import Control.Monad
-import Control.Monad.Identity
 import Test.HUnit
-
-import Types
 
 import DSL
 import DSL.Lib
 import DSL.Compiler
 import DSL.Interpreter
 
+(~=?=) :: (Eq b, Show b) => b -> b -> Test
 (~=?=) = flip (~=?)
 
 runOn :: (forall r . DSL r => r ()) -> (String -> String)
 runOn prog = runDetBF (interp $ compile (Some prog))
 
+test1, test2, test3, test4, test5  :: Test
+test6, test7, test8, test9, test10 :: Test
 test1 = test
         ["const0_a" ~: t "a" ~=?= "0",
          "const0_h" ~: t "h" ~=?= "0",
@@ -77,24 +76,19 @@ test4 = test
         a +: (ord '0')
         putchar a
 
-brute c = go 5 c'
-  where
-    c' = ord c - ord 'a'
-    go 0 c = ""
-    go n c = go (n-1) (c `div` 2) ++
-             [if even c then '-' else '*']
-
 test5 = test $ map mkTest "abcdefxyz"
   where
     m = 5
     mkTest c = ("binout_" ++ [c]) ~:
                  t [c] ~=?= (brute c ++ "\n")
+    brute :: Char -> String
     brute c = go m c'
       where
         c' = ord c - ord 'a'
-        go 0 c = ""
-        go n c = go (n-1) (c `div` 2) ++
-                 [if even c then '-' else '*']
+        go :: Int -> Int -> String
+        go 0 _  = ""
+        go n ch = go (n-1) (ch `div` 2) ++
+                 [if even ch then '-' else '*']
     
     t = runOn prog
     prog = encodeChar m
@@ -210,6 +204,7 @@ test10 = test
               q +: (ord '0')
               putchar q
 
+tests :: Test
 tests = test [ "const"   ~: test1
              , "inc"     ~: test2
              , "div2"    ~: test3
@@ -222,4 +217,5 @@ tests = test [ "const"   ~: test1
              , "divmod" ~: test10
              ]
 
+runTests :: IO Counts
 runTests = runTestTT tests

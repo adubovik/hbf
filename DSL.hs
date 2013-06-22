@@ -2,8 +2,14 @@
    TypeFamilies
  , FlexibleContexts #-}
 
-module DSL where
-
+module DSL
+  ( ArrVar(..)
+  , ArrayD
+  , Arr(..)
+  , DSL(..)
+  )
+where
+  
 data Arr v = Arr v Int deriving Show
 
 class ArrVar r where

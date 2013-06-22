@@ -1,4 +1,7 @@
-module Parser where
+module Parser
+  ( parseBF
+  )
+where
 
 import Text.ParserCombinators.Parsec
 
@@ -14,6 +17,7 @@ decP = char '-' >> return Dec
 putCharP = char '.' >> return PutChar
 getCharP = char ',' >> return GetChar
 
+atom :: Parser Command
 atom = succP <|> predP <|>
        incP <|> decP <|>
        getCharP <|> putCharP
