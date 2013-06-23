@@ -6,8 +6,6 @@ module Main where
 
 import DSL
 import DSL.Lib
-import Parser
-
 import DSL.PrettyPrinter
 import DSL.Compiler
 import DSL.MemoryManager
@@ -26,13 +24,6 @@ exec prog = do
   
   putStrLn "Interpreting, go ahead..."
   runIOBF (interp bf)
-
-parseAndExec :: String -> IO ()
-parseAndExec prog = do
-  case parseBF prog of
-    Left e      -> error $ "Parse error: " ++ show e
-    Right prog' -> let prog'' = commandToDSL $ prog'
-                   in  exec prog''
 
 main :: IO ()
 main = do
