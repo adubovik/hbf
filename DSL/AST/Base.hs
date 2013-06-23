@@ -16,7 +16,6 @@ module DSL.AST.Base
   , IOOp(..)
   , AST
   , runStack
-  , pprintAST
   )
 where
 
@@ -46,24 +45,6 @@ data ASTF r = Arith ArOp r
             | Switch Int r
             | Stop
             deriving (Functor, Traversable, Foldable, Show)
-
-pprintAST :: AST () -> String
-pprintAST = foldFree (const "") pp
-  where
-    pp (Arith op r) = ppAr op ++ r
-      where
-        ppAr Inc = "+"
-        ppAr Dec = "-"
-    pp (InOut op r) = ppIo op ++ r
-      where
-        ppIo Put = "."
-        ppIo Get = ","
-    pp (While a r) = "[" ++ a ++ "]" ++ r
-    pp (Switch i r) = replicate (abs i) c ++ r
-      where
-        c | i<=0      = '<'
-          | otherwise = '>'
-    pp Stop = ""
 
 type AST = Free ASTF
 type Stack = FreeT ASTF

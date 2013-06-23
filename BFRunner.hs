@@ -8,7 +8,7 @@ import DSL
 import DSL.Lib
 import Parser
 
-import DSL.AST.Base
+import DSL.PrettyPrinter
 import DSL.Compiler
 import DSL.MemoryManager
 import DSL.Interpreter
@@ -18,19 +18,19 @@ exec prog = do
   let bf    = compile (Some prog)
       bfSrc = pprintAST bf
       
-  print $ "Brainfuck source code [" ++ show (length bfSrc) ++ "]"
+  putStrLn $ "Brainfuck source code [" ++ show (length bfSrc) ++ "]"
   putStrLn bfSrc
   
-  print "Memory map:"
+  putStrLn "Memory map:"
   putStrLn $ show $ mkMemoryMap prog
   
-  print "Interpreting, go ahead..."
+  putStrLn "Interpreting, go ahead..."
   runIOBF (interp bf)
 
 parseAndExec :: String -> IO ()
 parseAndExec prog = do
   case parseBF prog of
-    Left e     -> error $ "Parse error: " ++ show e
+    Left e      -> error $ "Parse error: " ++ show e
     Right prog' -> let prog'' = commandToDSL $ prog'
                    in  exec prog''
 
