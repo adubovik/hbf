@@ -1,0 +1,70 @@
+name:          hbf
+version:       0.0.1
+license:       BSD3
+author:        Anton Dubovik
+cabal-version: >= 1.8
+synopsis:      BrainFuck interpreter and haskell DSL to BrainFuck translator
+build-type:    Simple
+category:      Compiler, Language
+
+library
+  build-depends: 
+    mtl,
+    base, 
+    parsec,
+    containers,
+    control-monad-free
+  hs-source-dirs: src
+  exposed-modules:
+    DSL,
+    DSL.Lib,
+    DSL.Compiler,
+    DSL.Interpreter,
+    DSL.MemoryManager,
+    DSL.PrettyPrinter,
+    Parser,
+    Types
+  other-modules:
+    Control.Monad.Free.Instances,
+    Control.Monad.InOutMonad,
+    DSL.AST.Memory,
+    DSL.AST.Base    
+  ghc-options: -Wall -Werror -fno-warn-orphans  
+
+executable hbfi
+  build-depends: 
+    mtl,
+    base, 
+    parsec,
+    containers,
+    control-monad-free
+  hs-source-dirs: src
+  main-is: Interpreter.hs
+  ghc-options: -Wall -Werror -fno-warn-orphans
+  other-modules:
+    Control.Monad.Free.Instances,
+    Control.Monad.InOutMonad,
+    DSL,
+    Types,
+    Parser,          
+    DSL.Lib,         
+    DSL.AST.Memory,
+    DSL.AST.Base,    
+    DSL.MemoryManager,
+    DSL.PrettyPrinter,
+    DSL.Compiler,  
+    DSL.Interpreter
+
+test-suite test
+  type: exitcode-stdio-1.0
+  ghc-options: -Wall -Werror -fno-warn-orphans
+  hs-source-dirs: test
+  main-is: Test.hs
+  build-depends:
+    hbf,
+    HUnit,
+    mtl,
+    base, 
+    parsec,
+    containers,
+    control-monad-free

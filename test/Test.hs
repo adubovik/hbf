@@ -3,7 +3,7 @@
  , ExistentialQuantification
  , RankNTypes #-}
 
-module Test(runTests) where
+module Main(main) where
 
 import Data.Char
 import Test.HUnit
@@ -217,5 +217,5 @@ tests = test [ "const"   ~: test1
              , "divmod" ~: test10
              ]
 
-runTests :: IO Counts
-runTests = runTestTT tests
+main :: IO ()
+main = runTestTT tests >> return ()
