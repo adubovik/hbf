@@ -5,7 +5,8 @@
 module Main where
 
 import DSL
-import DSL.Lib
+import DSL.Lib.EncodeString
+
 import DSL.PrettyPrinter
 import DSL.Compiler
 import DSL.MemoryManager

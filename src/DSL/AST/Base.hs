@@ -34,6 +34,8 @@ import Types hiding (Command(..))
 
 import DSL
 import DSL.Lib
+import DSL.Lib.Array
+
 import DSL.MemoryManager
 
 data ArOp = Inc | Dec deriving Show

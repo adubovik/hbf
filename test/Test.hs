@@ -10,6 +10,9 @@ import Test.HUnit
 
 import DSL
 import DSL.Lib
+import DSL.Lib.EncodeString
+import DSL.Lib.Array
+
 import DSL.Compiler
 import DSL.Interpreter
 
@@ -31,7 +34,7 @@ test1 = test
       localVar $ \a -> do
         getchar a
         zero a
-        a +: (ord '0')
+        a += ord '0'
         putchar a
 
 test2 = test
@@ -43,7 +46,7 @@ test2 = test
     prog =
       localVar $ \a -> do
         getchar a
-        a +: 1
+        a += 1
         putchar a
 
 test3 = test
@@ -56,9 +59,9 @@ test3 = test
     prog = 
       localVar $ \a -> do
         getchar a
-        a +: (- (ord '0'))
-        div2 a
-        a +: (ord '0')
+        a -= ord '0'
+        quotient 2 a
+        a += ord '0'
         putchar a
 
 test4 = test
@@ -71,9 +74,9 @@ test4 = test
     prog =
       localVar $ \a -> do
         getchar a
-        a +: (- (ord '0'))
-        mod2 a
-        a +: (ord '0')
+        a -= ord '0'
+        remainder 2 a
+        a += ord '0'
         putchar a
 
 test5 = test $ map mkTest "abcdefxyz"
@@ -107,10 +110,10 @@ test6 = test
         localVar $ \b -> do
           getchar b
 
-          a +: (- (ord '0'))
-          b +: (- (ord '0'))
+          a -= ord '0'
+          b -= ord '0'
           a -| b
-          a +: (ord '0')
+          a += ord '0'
 
           putchar a
 
@@ -126,7 +129,7 @@ test7 = test
       localVar $ \a -> do
         getchar a
         localVar $ \b -> do  
-          copy a b
+          b =: a
           putchar b
           putchar a
 
@@ -142,15 +145,15 @@ test8 = test
     prog = do
       localVar $ \a -> do
         getchar a
-        a +: (- (ord '0'))
+        a -= ord '0'
         localVar $ \b -> do          
           getchar b
-          b +: (- (ord '0'))
+          b -= ord '0'
 
           add a b
 
-          a +: (ord '0')
-          b +: (ord '0')
+          a += ord '0'
+          b += ord '0'
           putchar a
           putchar b
 
@@ -169,10 +172,10 @@ test9 = test
           repeatCode n $ do
             getchar c
             setArrayCell x c arr
-            x +: 1
+            x += 1
 
           repeatCode n $ do
-            x +: (-1)
+            x -= 1
             getArrayCell c x arr
             putchar c
 
@@ -189,19 +192,19 @@ test10 = test
       localVar $ \n -> do
         localVar $ \d -> do
           getchar n
-          n +: (- (ord '0'))
+          n -= ord '0'
           
           getchar d
-          d +: (- (ord '0'))
+          d -= ord '0'
 
           localVar $ \r -> do
             localVar $ \q -> do
               divmod n d r q
 
-              r +: (ord '0')
+              r += ord '0'
               putchar r
               
-              q +: (ord '0')
+              q += ord '0'
               putchar q
 
 tests :: Test
