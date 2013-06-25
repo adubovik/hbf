@@ -6,7 +6,6 @@ module Types
   , Command(..)
   , normVar
   , mapVar
-  , opVar
 
   , optBF
   )
@@ -27,14 +26,10 @@ normVar (ArrT0   i) = Var $ i+1
 normVar (ArrT1   i) = Var $ i+2
 
 mapVar :: (Int -> Int) -> Var -> Var
-mapVar f (Var i) = Var $ f i
-mapVar f (ArrInit i) = ArrInit $ f i
-mapVar f (ArrT0 i) = ArrT0 $ f i
-mapVar f (ArrT1 i) = ArrT1 $ f i
-
-opVar :: (Int -> Int) -> (Var -> Var)
-opVar f (Var i) = Var (f i)
-opVar _ v = error $ "opVar f (" ++ show v ++ ")"
+mapVar f (Var     i) = Var     $ f i     
+mapVar f (ArrInit i) = ArrInit $ f i 
+mapVar f (ArrT0   i) = ArrT0   $ f i   
+mapVar f (ArrT1   i) = ArrT1   $ f i   
 
 instance ArrVar Var where
   arrInit (Arr (Var i) _) = ArrInit i
@@ -43,11 +38,11 @@ instance ArrVar Var where
   arrT0 (Arr (Var i) _) = ArrT0 i
   arrT0 v = error $ "arrT0 (" ++ show v ++ ")"
   
-  arrT1     (Arr (Var i) _) = ArrT1 i
+  arrT1 (Arr (Var i) _) = ArrT1 i
   arrT1 v = error $ "arrT1 (" ++ show v ++ ")"
   
-  arrLength (Arr _ n)       = 2*n+3
-  arrMake                   = Arr
+  arrLength (Arr _ n) = 2*n+3
+  arrMake             = Arr
 
 data Command = Succ | Pred |
                Inc | Dec |

@@ -38,13 +38,10 @@ delVariable v _ = error $ "delVariable (" ++ show v ++ ") mem"
 
 ----------------------
 
-arrSize :: Int -> Int
-arrSize n = 2*n + 3
-
 newArray :: Int -> MemoryState -> (Arr Var, MemoryState)
 newArray n mem = (arr, mem')
   where
-    m = arrSize n
+    m = arrLength arr
     arrCands = map (\x -> [x+1..x+m]) ((-1) : Set.toList mem)
     arrCands'= filter (not . any (`Set.member` mem)) arrCands
     arrCells = head arrCands'
@@ -53,9 +50,9 @@ newArray n mem = (arr, mem')
     mem'     = mem <> (Set.fromList arrCells)
 
 delArray :: Arr Var -> MemoryState -> MemoryState
-delArray (Arr (Var initCell) n) mem =
+delArray arr@(Arr (Var initCell) _) mem =
   let str = initCell
-      end = str + arrSize n - 1
+      end = str + arrLength arr - 1
   in  mem `Set.difference` Set.fromList [str,end]
 delArray arr _ = error $ "delArray (" ++ show arr ++ ") mem"
 
