@@ -5,7 +5,7 @@
 module Main where
 
 import DSL
-import DSL.Lib.EncodeString
+import DSL.Lib
 
 import DSL.PrettyPrinter
 import DSL.Compiler

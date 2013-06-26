@@ -7,8 +7,9 @@ where
 import Data.Char
 
 import DSL
-import DSL.Lib
+import DSL.Lib.Core
 import DSL.Lib.Array
+import DSL.Lib.Arithmetics
 
 -- | Derivative
 binaryOut :: DSL r => Int -> VarD r -> r ()

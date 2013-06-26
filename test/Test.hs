@@ -10,8 +10,6 @@ import Test.HUnit
 
 import DSL
 import DSL.Lib
-import DSL.Lib.EncodeString
-import DSL.Lib.Array
 
 import DSL.Compiler
 import DSL.Interpreter

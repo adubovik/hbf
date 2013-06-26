@@ -3,7 +3,7 @@ version:       0.0.1
 license:       BSD3
 author:        Anton Dubovik
 cabal-version: >= 1.8
-synopsis:      BrainFuck interpreter and haskell DSL to BrainFuck translator
+synopsis:      BrainFuck interpreter and Haskell DSL to BrainFuck translator
 build-type:    Simple
 category:      Compiler, Language
 
@@ -28,7 +28,13 @@ library
     Control.Monad.Free.Instances,
     Control.Monad.InOutMonad,
     DSL.AST.Memory,
-    DSL.AST.Base    
+    DSL.AST.Base,
+
+    DSL.Lib.Arithmetics,
+    DSL.Lib.Array,
+    DSL.Lib.Core,
+    DSL.Lib.EncodeString
+  
   ghc-options: -Wall -Werror -fno-warn-orphans  
 
 executable hbfi
@@ -47,7 +53,13 @@ executable hbfi
     DSL,
     Types,
     Parser,          
+
     DSL.Lib,         
+    DSL.Lib.Arithmetics,
+    DSL.Lib.Array,
+    DSL.Lib.Core,
+    DSL.Lib.EncodeString
+
     DSL.AST.Memory,
     DSL.AST.Base,    
     DSL.MemoryManager,

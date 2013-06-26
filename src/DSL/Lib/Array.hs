@@ -3,7 +3,7 @@ module DSL.Lib.Array where
 import Control.Monad
 
 import DSL
-import DSL.Lib
+import DSL.Lib.Core
 
 -- Look at
 -- http://esolangs.org/wiki/brainfuck_algorithms#x.28y.29_.3D_z_.281-d_array.29_.282_cells.2Farray_element.29
