@@ -3,7 +3,8 @@
  , ExistentialQuantification
  , RankNTypes #-}
 
-module Main(main) where
+module Main
+       {--(main)--} where
 
 import Data.Char
 import Test.HUnit
@@ -167,12 +168,12 @@ test9 = test
     prog n = localArr n $ \arr -> do
       localVar $ \x -> do
         localVar $ \c -> do
-          repeatCode n $ do
+          forI n $ do
             getchar c
             setArrayCell x c arr
             x += 1
 
-          repeatCode n $ do
+          forI n $ do
             x -= 1
             getArrayCell c x arr
             putchar c

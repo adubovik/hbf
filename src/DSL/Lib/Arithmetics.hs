@@ -3,6 +3,7 @@ module DSL.Lib.Arithmetics where
 import DSL
 import DSL.Lib.Core
 
+-- | v := max(v-n, 0)
 abssub :: DSL r => VarD r -> VarD r -> r ()
 abssub v n = do
   localVar $ \n' -> do
@@ -11,27 +12,12 @@ abssub v n = do
       n' -= 1
       ifthen v (v -= 1) (return ())
 
+infixl 6 -|
 (-|) :: DSL r => VarD r -> VarD r -> r ()
 (-|) = abssub
 
--- v =: v `div` n
-quotient :: DSL r => Int -> VarD r -> r ()
-quotient n v = do
-  localVar $ \tmp -> do
-    localVar $ \num -> do
-      num += n
-      localVar $ \one -> do
-        one += 1
-        v -| one
-        while v $ do
-          v -| num
-          tmp += 1
-        mov tmp v
-
--- before: >n d
--- after : >0 d-n%d n%d n/d
--- origin: [->-[>+>>]>[+[-<+>]>+>>]<<<<<]
--- [n0- n1- n2+ { if n1 () else ([n2- n1+] n3+)} <<<<<]
+-- | r := n `mod` d
+-- q := n `div` d
 divmod :: DSL r =>
           VarD r -> VarD r -> VarD r -> VarD r -> r ()
 divmod n d r q =
@@ -53,11 +39,101 @@ divmod n d r q =
             d' += 1
           q += 1
 
--- v := v `mod` n
+-- | v := v `div` n
+quotient :: DSL r => Int -> VarD r -> r ()
+quotient n v = do
+  localVar $ \n' -> do
+    n' += n
+    localVar $ \r -> do
+      localVar $ \q -> do
+        divmod v n' r q
+        v =: q
+  
+-- | v := v `mod` n
 remainder :: DSL r => Int -> VarD r -> r ()
 remainder n v = do
-  localVar $ \tmp -> do
-    tmp =: v
-    quotient n tmp
-    repeatCode n $
-      v -| tmp
+  localVar $ \n' -> do
+    n' += n
+    localVar $ \r -> do
+      localVar $ \q -> do
+        divmod v n' r q
+        v =: r
+
+data Oper = Add | Sub
+
+operVV :: DSL r => Oper -> VarD r -> VarD r -> r ()
+operVV op a b = do
+  localVar $ \t -> do
+    while b $ do
+      case op of
+        Add -> a += 1
+        Sub -> a -= 1
+      b -= 1
+      t += 1
+    while t $ do
+      b += 1
+      t -= 1
+
+infixl 6 +=:, -=:
+(+=:),(-=:), (*=:), (/=:) :: DSL r => VarD r -> VarD r -> r ()
+
+-- | a := a + b
+a +=: b = operVV Add a b
+
+-- | a := a - b
+a -=: b = operVV Sub a b
+
+infixl 7 *=:, /=:
+
+-- | a := a * b
+a *=: b = do
+  localVar $ \a' -> do
+    a +> a'
+    while a' $ do
+      forV b (a += 1)
+      a' -= 1
+
+-- | a := a / b
+a /=: b = do
+  localVar $ \r -> do
+    localVar $ \q -> do
+      divmod a b r q
+      a =: q
+
+-- | (a,b) := (b,a)
+swap :: DSL r => VarD r -> VarD r -> r ()
+swap a b = do
+  localVar $ \t -> do
+    a +> t
+    b +> a
+    t +> b
+
+infixl 4 ===:, =/=:
+
+(===:), (=/=:) :: DSL r => VarD r -> VarD r -> r ()
+
+-- | a := (a == b) ? 1 : 0
+a ===: b = do
+  localVar $ \d1 -> do
+    localVar $ \d2 -> do
+      d1 =: a
+      d2 =: b
+      d1 -| b
+      d2 -| a
+
+      zero a
+      d1 +> a
+      d2 +> a
+
+      ifthen a (zero a) (a += 1)
+
+-- | a := (a /= b) ? 1 : 0
+a =/=: b = do
+  a ===: b
+  neg a
+
+-- | a := if a>0 then 0 else 1
+neg :: DSL r => VarD r -> r ()
+neg a = do
+  ifthen a (zero a) (zero a >> a += 1)
+

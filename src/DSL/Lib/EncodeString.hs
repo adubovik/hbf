@@ -10,19 +10,20 @@ import DSL
 import DSL.Lib.Core
 import DSL.Lib.Array
 import DSL.Lib.Arithmetics
+import DSL.Lib.IO
 
 -- | Derivative
 binaryOut :: DSL r => Int -> VarD r -> r ()
 binaryOut n v = localArr n $ \arr -> do
   localVar $ \idx -> do
-    repeatCode n $ do
+    forI n $ do
       localVar $ \r -> do        
         localVar $ \two -> do
           two += 2
           divmod v two r v
         setArrayCell idx r arr
         idx += 1
-    repeatCode n $ do
+    forI n $ do
       localVar $ \r -> do
         idx -= 1
         getArrayCell r idx arr
@@ -42,4 +43,4 @@ encodeChar n = do
     printChar '\n'
 
 encodeString :: DSL r => r ()
-encodeString = repeatCode 26 (encodeChar 5)
+encodeString = forI 26 (encodeChar 5)

@@ -1,16 +1,15 @@
 module DSL.Lib.Core where
 
-import Data.Char
 import Control.Monad
 
 import DSL
 import Types
 import Parser
 
--- | Base arithmetics
+-- * Base arithmetics
 
-infix 5 +=
-infix 5 -=
+infixl 6 +=
+infixl 6 -=
 
 (+=),(-=) :: DSL m => VarD m -> Int -> m ()
 v += n = do
@@ -23,12 +22,18 @@ v -= n = v += (-n)
 zero :: DSL r => VarD r -> r ()
 zero v = while v (v -= 1)
 
+-- | b := b + a
+-- a := 0
 add :: DSL r => VarD r -> VarD r -> r ()
-add src dst = while src $ do
-  src -= 1
-  dst += 1
+add a b = while a $ do
+  a -= 1
+  b += 1
 
--- | Moving bites around
+infixl 6 +>
+(+>) :: DSL r => VarD r -> VarD r -> r ()
+(+>) = add
+
+-- * Moving bytes around
 
 mov :: DSL m => VarD m -> VarD m -> m ()
 mov from to = do
@@ -49,7 +54,7 @@ infix 5 =:
 (=:) :: DSL m => VarD m -> VarD m -> m ()
 (=:) = flip copy
 
--- | Unsafe actions
+-- * Unsafe actions
 
 unsafeBF :: DSL r => String -> r ()
 unsafeBF prog = 
@@ -70,7 +75,7 @@ commandToDSL = mapM_ f
     f PutChar = putcharU
     f (While l) = whileU (commandToDSL l)
 
--- | DSL enhancements
+-- * DSL enhancements
 
 inc, dec :: DSL r => VarD r -> r ()
 dec v = switch v >> decU
@@ -80,7 +85,7 @@ putchar, getchar :: DSL r => VarD r -> r ()
 putchar v = switch v >> putcharU
 getchar v = switch v >> getcharU
 
--- | Control flow
+-- * Control flow
 
 ifthen :: DSL r => VarD r -> r () -> r () -> r ()
 ifthen v t f = do
@@ -96,22 +101,25 @@ ifthen v t f = do
         f
         zero tmp
 
-repeatCode :: DSL r => Int -> r () -> r ()
-repeatCode n act = do
+-- | `act` repeated `n` times
+forI :: DSL r => Int -> r () -> r ()
+forI n act = do
   localVar $ \cnt -> do
     cnt += n
     while cnt $ do
       cnt -= 1
       act
 
+-- | `act` repeated `cnt` times
+forV :: DSL r => VarD r -> r () -> r ()
+forV cnt act = do
+  localVar $ \tmp -> do
+    tmp =: cnt
+    while tmp $ do
+      act
+      tmp -= 1
+
 while :: DSL r => VarD r -> r () -> r ()
 while v act = do
   switch v
   whileU (act >> switch v)
-
--- | IO
-printChar :: DSL r => Char -> r ()
-printChar c = do
-  localVar $ \v -> do
-    v += ord c
-    putchar v

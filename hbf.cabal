@@ -33,6 +33,7 @@ library
     DSL.Lib.Arithmetics,
     DSL.Lib.Array,
     DSL.Lib.Core,
+    DSL.Lib.IO,
     DSL.Lib.EncodeString
   
   ghc-options: -Wall -Werror -fno-warn-orphans  
@@ -58,6 +59,7 @@ executable hbfi
     DSL.Lib.Arithmetics,
     DSL.Lib.Array,
     DSL.Lib.Core,
+    DSL.Lib.IO,
     DSL.Lib.EncodeString
 
     DSL.AST.Memory,
