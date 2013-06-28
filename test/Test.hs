@@ -1,10 +1,10 @@
 {-# LANGUAGE
    NoMonomorphismRestriction
  , ExistentialQuantification
- , RankNTypes #-}
+ , RankNTypes
+ , ScopedTypeVariables #-}
 
-module Main
-       {--(main)--} where
+module Main(main) where
 
 import Data.Char
 import Test.HUnit
@@ -21,13 +21,12 @@ import DSL.Interpreter
 runOn :: (forall r . DSL r => r ()) -> (String -> String)
 runOn prog = runDetBF (interp $ compile (Some prog))
 
-test1, test2, test3, test4, test5  :: Test
-test6, test7, test8, test9, test10 :: Test
-test1 = test
-        ["const0_a" ~: t "a" ~=?= "0",
-         "const0_h" ~: t "h" ~=?= "0",
-         "const0_0" ~: t "0" ~=?= "0"]
+constNil :: Test
+constNil = test (map mkTest testSrc)
   where
+    testSrc = "ah0"
+    mkTest c = [c] ~: t [c] ~=?= "0"
+    
     t = runOn prog
     prog =
       localVar $ \a -> do
@@ -36,11 +35,12 @@ test1 = test
         a += ord '0'
         putchar a
 
-test2 = test
-        ["inc_a" ~: t "a" ~=?= "b",
-         "inc_i" ~: t "i" ~=?= "j",
-         "inc_5" ~: t "5" ~=?= "6"]
+nextCharTest :: Test
+nextCharTest = test (map mkTest testSrc)
   where
+    testSrc = ['a'..'f']
+    mkTest c = [c] ~: t [c] ~=?= [chr (ord c + 1)]
+    
     t = runOn prog
     prog =
       localVar $ \a -> do
@@ -48,37 +48,8 @@ test2 = test
         a += 1
         putchar a
 
-test3 = test
-        ["div2_2" ~: t "2" ~=?= "1",
-         "div2_3" ~: t "3" ~=?= "1",
-         "div2_0" ~: t "0" ~=?= "0",
-         "div2_9" ~: t "9" ~=?= "4"]
-  where
-    t = runOn prog
-    prog = 
-      localVar $ \a -> do
-        getchar a
-        a -= ord '0'
-        quotient 2 a
-        a += ord '0'
-        putchar a
-
-test4 = test
-        ["mod2_2" ~: t "2" ~=?= "0",
-         "mod2_3" ~: t "3" ~=?= "1",
-         "mod2_0" ~: t "0" ~=?= "0",
-         "mod2_9" ~: t "9" ~=?= "1"]
-  where
-    t = runOn prog
-    prog =
-      localVar $ \a -> do
-        getchar a
-        a -= ord '0'
-        remainder 2 a
-        a += ord '0'
-        putchar a
-
-test5 = test $ map mkTest "abcdefxyz"
+binaryOutTest :: Test
+binaryOutTest = test $ map mkTest "abcdefxyz"
   where
     m = 5
     mkTest c = ("binout_" ++ [c]) ~:
@@ -95,13 +66,16 @@ test5 = test $ map mkTest "abcdefxyz"
     t = runOn prog
     prog = encodeChar m
 
-test6 = test
-        ["23" ~: t "23" ~=?= "0",
-         "31" ~: t "31" ~=?= "2",
-         "47" ~: t "47" ~=?= "0",
-         "94" ~: t "94" ~=?= "5",
-         "98" ~: t "98" ~=?= "1"]
+abssubTest :: Test
+abssubTest = test (map mkTest testSrc)
   where
+    testSrc :: [(Int,Int)] = 
+      [ (2,3),(3,1),(4,7),(9,4)
+      , (9,8),(0,1),(1,0),(0,0)
+      ]
+    
+    mkTest (a,b) = (show a ++ show b) ~: t (show a ++ show b) ~=?= show (max (a-b) 0)
+
     t = runOn prog
     prog =
       localVar $ \a -> do
@@ -116,13 +90,12 @@ test6 = test
 
           putchar a
 
-test7 = test
-        ["2" ~: t "2" ~=?= "22",
-         "3" ~: t "3" ~=?= "33",
-         "4" ~: t "4" ~=?= "44",
-         "9" ~: t "9" ~=?= "99",
-         "8" ~: t "8" ~=?= "88"]
+copyTest :: Test
+copyTest = test (map mkTest testSrc)
   where
+    testSrc :: [Int] = [2,3,4,9,8]
+    mkTest n = (show n) ~: t (show n) ~=?= (show n ++ show n)
+    
     t = runOn prog
     prog = do
       localVar $ \a -> do
@@ -132,14 +105,13 @@ test7 = test
           putchar b
           putchar a
 
-test8 = test
-        ["23" ~: t "23" ~=?= "05",
-         "45" ~: t "45" ~=?= "09",
-         "54" ~: t "54" ~=?= "09",
-         "00" ~: t "00" ~=?= "00",
-         "01" ~: t "01" ~=?= "01",
-         "10" ~: t "10" ~=?= "01"]
+addTest :: Test
+addTest = test (map mkTest testSrc)
   where
+    -- only one digit numbers in `testSrc`!
+    testSrc :: [(Int,Int)] = [(2,3),(4,5),(5,4),(0,0),(0,1),(1,0)]
+    mkTest (a,b) = (show a ++ show b) ~: t (show a ++ show b) ~=?= ("0" ++ show (a+b))
+    
     t = runOn prog
     prog = do
       localVar $ \a -> do
@@ -156,14 +128,12 @@ test8 = test
           putchar a
           putchar b
 
-test9 = test
-        [ "0"  ~: t 0 ""            ~=?= ""
-        , "1"  ~: t 1 "1"           ~=?= "1"
-        , "2"  ~: t 2 "12"          ~=?= "21"
-        , "3"  ~: t 3 "123"         ~=?= "321"
-        , "10" ~: t 10 "1234567890" ~=?= "0987654321"
-        ]
+reverseStringTest :: Test
+reverseStringTest = test (map mkTest testSrc)
   where
+    testSrc = ["","1","12","123","1234567890"]
+    mkTest str = str ~: t (length str) str ~=?= (reverse str)
+    
     t n = runOn (prog n)
     prog n = localArr n $ \arr -> do
       localVar $ \x -> do
@@ -178,45 +148,42 @@ test9 = test
             getArrayCell c x arr
             putchar c
 
-test10 = test
-        [ "12"  ~: t "12" ~=?= "10"
-        , "21"  ~: t "21" ~=?= "02"
-        , "92"  ~: t "92" ~=?= "14"
-        , "95"  ~: t "95" ~=?= "41"
-        , "73"  ~: t "73" ~=?= "12"
-        ]
+divModTest :: Test
+divModTest = test (map mkTest testSrc)
   where
+    testSrc :: [(Int,Int)] = 
+      [ (1,2),(2,1),(9,2),(9,5)
+      , (7,3),(0,1),(13,4),(15,3)
+      , (200,7),(134,110)
+      ]
+    mkTest (n,d) = (show n ++ " `divMod` " ++ show d) ~:
+                   t (show n ++ " " ++ show d ++ " ") ~=?=
+                   (show (n `div` d) ++ " " ++ show (n `mod` d))
+    
     t = runOn prog
     prog =
       localVar $ \n -> do
         localVar $ \d -> do
-          getchar n
-          n -= ord '0'
-          
-          getchar d
-          d -= ord '0'
+          readInt n          
+          readInt d
 
           localVar $ \r -> do
             localVar $ \q -> do
               divmod n d r q
 
-              r += ord '0'
-              putchar r
-              
-              q += ord '0'
-              putchar q
+              printInt q
+              printChar ' '
+              printInt r
 
 tests :: Test
-tests = test [ "const"   ~: test1
-             , "inc"     ~: test2
-             , "div2"    ~: test3
-             , "mod2"    ~: test4
-             , "binout"  ~: test5
-             , "safeSub" ~: test6
-             , "copy"    ~: test7
-             , "add"     ~: test8
-             , "reverseStringArray" ~: test9
-             , "divmod" ~: test10
+tests = test [ "const"   ~: constNil
+             , "inc"     ~: nextCharTest
+             , "binout"  ~: binaryOutTest
+             , "safeSub" ~: abssubTest
+             , "copy"    ~: copyTest
+             , "add"     ~: addTest
+             , "reverse string" ~: reverseStringTest
+             , "divmod" ~: divModTest
              ]
 
 main :: IO ()

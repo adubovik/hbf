@@ -13,6 +13,9 @@ printChar c = do
     v += ord c
     putchar v
 
+printString :: DSL r => String -> r ()
+printString = mapM_ printChar
+
 -- | reads integer to variable `v` where space is used as delimiter.
 -- There is no end-of-file marker in BF.
 readInt :: DSL r => VarD r -> r ()
