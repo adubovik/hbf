@@ -29,4 +29,4 @@ bf :: Parser [Command]
 bf = many (whileP <|> atom)
 
 parseBF :: String -> Either ParseError [Command]
-parseBF = parse bf ""
+parseBF = parse bf "" . filter (flip elem "<>+-,.[]")
