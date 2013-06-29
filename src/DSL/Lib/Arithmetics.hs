@@ -17,7 +17,7 @@ infixl 6 -|
 (-|) = abssub
 
 -- | r := n `mod` d
--- q := n `div` d
+--   q := n `div` d
 divmod :: DSL r =>
           VarD r -> VarD r -> VarD r -> VarD r -> r ()
 divmod n d r q =
@@ -75,7 +75,7 @@ operVV op a b = do
       t -= 1
 
 infixl 6 +=:, -=:
-(+=:),(-=:), (*=:), (/=:) :: DSL r => VarD r -> VarD r -> r ()
+(+=:),(-=:), (*=:), (/=:), (%=:) :: DSL r => VarD r -> VarD r -> r ()
 
 -- | a := a + b
 a +=: b = operVV Add a b
@@ -99,6 +99,14 @@ a /=: b = do
     localVar $ \q -> do
       divmod a b r q
       a =: q
+
+-- | a := a % b
+a %=: b = do
+  localVar $ \r -> do
+    localVar $ \q -> do
+      divmod a b r q
+      a =: r
+
 
 -- | (a,b) := (b,a)
 swap :: DSL r => VarD r -> VarD r -> r ()

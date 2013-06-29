@@ -17,6 +17,7 @@ library
   hs-source-dirs: src
   exposed-modules:
     DSL,
+    DSLCont,
     DSL.Lib,
     DSL.Compiler,
     DSL.Interpreter,
@@ -36,7 +37,7 @@ library
     DSL.Lib.IO,
     DSL.Lib.EncodeString
   
-  ghc-options: -Wall -Werror -fno-warn-orphans  
+  ghc-options: -Wall -Werror -fno-warn-orphans -O2
 
 executable hbfi
   build-depends: 
@@ -47,11 +48,12 @@ executable hbfi
     control-monad-free
   hs-source-dirs: src
   main-is: Interpreter.hs
-  ghc-options: -Wall -Werror -fno-warn-orphans
+  ghc-options: -Wall -Werror -fno-warn-orphans -O2
   other-modules:
     Control.Monad.Free.Instances,
     Control.Monad.InOutMonad,
     DSL,
+    DSLCont,
     Types,
     Parser,          
 
@@ -71,7 +73,7 @@ executable hbfi
 
 test-suite test
   type: exitcode-stdio-1.0
-  ghc-options: -Wall -Werror -fno-warn-orphans
+  ghc-options: -Wall -Werror -fno-warn-orphans -O2
   hs-source-dirs: test
   main-is: Test.hs
   build-depends:

@@ -8,8 +8,10 @@ module Main(main) where
 
 import Data.Char
 import Test.HUnit
+import Text.Printf
 
 import DSL
+import DSLCont
 import DSL.Lib
 
 import DSL.Compiler
@@ -52,8 +54,7 @@ binaryOutTest :: Test
 binaryOutTest = test $ map mkTest "abcdefxyz"
   where
     m = 5
-    mkTest c = ("binout_" ++ [c]) ~:
-                 t [c] ~=?= (brute c ++ "\n")
+    mkTest c = ("binout_" ++ [c]) ~: t [c] ~=?= (brute c ++ "\n")
     brute :: Char -> String
     brute c = go m c'
       where
@@ -175,15 +176,42 @@ divModTest = test (map mkTest testSrc)
               printChar ' '
               printInt r
 
+dslContTest :: Test
+dslContTest = test (map mkTest testSrc)
+  where
+    testSrc :: [(Int,Int,Int)] = 
+      [(1,2,3),(5,0,6),(0,0,0),(7,7,7),(1,1,1),(11,0,9)]
+    mkTest (x,y,z) = 
+      show [x,y,z] ~: t (printf "%d %d %d " x y z) ~=?= 
+                        (printf "%d %d" 
+                          ((x*x + y*y + z*z) `div` 3)
+                          ((x + y + z) `div` 3))
+    
+    t = runOn prog
+
+    prog = do
+      localVar $ \x -> do
+        readInt x
+        localVar $ \y -> do
+          readInt y
+          localVar $ \z -> do
+            readInt z
+            printInt <!> 
+              ((u x * u x) + (u y * u y) + (u z * u z)) `div` 3
+            printChar ' '
+            printInt <!> (u x + u y + u z) `div` 3
+
+
 tests :: Test
-tests = test [ "const"   ~: constNil
-             , "inc"     ~: nextCharTest
-             , "binout"  ~: binaryOutTest
-             , "safeSub" ~: abssubTest
-             , "copy"    ~: copyTest
-             , "add"     ~: addTest
+tests = test [ "const"          ~: constNil
+             , "inc"            ~: nextCharTest
+             , "binout"         ~: binaryOutTest
+             , "safeSub"        ~: abssubTest
+             , "copy"           ~: copyTest
+             , "add"            ~: addTest
              , "reverse string" ~: reverseStringTest
-             , "divmod" ~: divModTest
+             , "divmod"         ~: divModTest
+             , "dslCont"        ~: dslContTest
              ]
 
 main :: IO ()
