@@ -7,6 +7,12 @@
 module DSLCont
   ( u
   , (<!>)
+  , execDSLCont
+
+  , printI
+  , printC
+  , readI
+  , newVar
   )
 where
 
@@ -25,19 +31,24 @@ infixl 1 <!>
 (<!>) :: DSL r => (a -> r ()) -> C r a -> r ()
 (<!>) = flip runContT
 
+execDSLCont :: DSL r => C r a -> r ()
+execDSLCont x = (const $ return ()) <!> x
+
 binOpCont :: DSL r =>
         (VarD r -> VarD r -> r ())
      -> C r (VarD r)
      -> C r (VarD r)
      -> C r (VarD r)
-binOpCont op x y = do
-    t1 <- x
-    t2 <- y
+binOpCont op xc yc = do
+    x <- xc
+    y <- yc
     ContT $ \k ->
-      localVar $ \t0 -> do
-        t0  =: t1
-        t0 `op` t2
-        k t0
+      localVar $ \t -> do
+        t  =: x
+        t `op` y
+        k t
+
+-- | Pure actions
 
 instance (DSL r, v ~ VarD r) => Num (C r v) where
   (+) = binOpCont (+=:)
@@ -66,3 +77,30 @@ instance (DSL r, v ~ VarD r) => Integral (C r v) where
   divMod      = quotRem
 
   toInteger = undefined
+
+-- | IO
+  
+readI :: DSL r => C r (VarD r)
+readI = ContT $ \k ->
+  localVar $ \t -> do
+    readInt t
+    k t
+
+printI :: DSL r => C r (VarD r) -> C r ()
+printI xc = do
+  x <- xc
+  ContT $ \k -> do
+    printInt x
+    k ()
+
+printC :: DSL r => Char -> C r ()
+printC c = ContT $ \k -> do
+  printChar c
+  k ()
+
+-- | Rest
+
+newVar :: DSL r => C r (VarD r)
+newVar = ContT $ \k ->
+  localVar $ \t0 -> do
+    k t0

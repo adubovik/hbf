@@ -189,17 +189,13 @@ dslContTest = test (map mkTest testSrc)
     
     t = runOn prog
 
-    prog = do
-      localVar $ \x -> do
-        readInt x
-        localVar $ \y -> do
-          readInt y
-          localVar $ \z -> do
-            readInt z
-            printInt <!> 
-              ((u x * u x) + (u y * u y) + (u z * u z)) `div` 3
-            printChar ' '
-            printInt <!> (u x + u y + u z) `div` 3
+    prog = execDSLCont $ do
+      x <- readI
+      y <- readI
+      z <- readI
+      printI $ ((u x * u x) + (u y * u y) + (u z * u z)) `div` 3
+      printC $ ' '
+      printI $ (u x + u y + u z) `div` 3
 
 
 tests :: Test
