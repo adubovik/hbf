@@ -197,6 +197,34 @@ dslExprTest = test (map mkTest testSrc)
       printC $ ' '
       printI $ (u x + u y + u z) `div` 3
 
+comparisonTest :: Test
+comparisonTest = test (map mkTest testSrc)
+  where
+    testSrc :: [(Int,Int)] = 
+      [(i,j) | i <- [0..3], j <- [0..3]]
+    mkTest (x,y) = 
+      show [x,y] ~: t (printf "%d %d " x y) ~=?= 
+                        (concatMap (show . fromEnum) [x<y,x<=y,x==y])
+    
+    t = runOn prog
+
+    prog = do
+      localVar $ \a -> do
+        readInt a
+        localVar $ \b -> do
+          readInt b
+          localVar $ \a' -> do
+            a' =: a
+            a' =<: b
+            printInt a'
+
+            a' =: a
+            a' =<=: b
+            printInt a'
+
+            a' =: a
+            a' ===: b
+            printInt a'
 
 tests :: Test
 tests = test [ "const"          ~: constNil
@@ -207,7 +235,8 @@ tests = test [ "const"          ~: constNil
              , "add"            ~: addTest
              , "reverse string" ~: reverseStringTest
              , "divmod"         ~: divModTest
-             , "DSL expression"        ~: dslExprTest
+             , "DSL expression" ~: dslExprTest
+             , "comparison"     ~: comparisonTest
              ]
 
 main :: IO ()

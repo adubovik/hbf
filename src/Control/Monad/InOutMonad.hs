@@ -37,7 +37,9 @@ instance InOutMonad (DetIO i o) where
   type O (DetIO i o) = o
   
   consumeInput = DetIO $ do
-    i <- gets head
+    let safeHead [] = error "Error: unexpected end of input sequence."
+        safeHead (x:_) = x
+    i <- gets safeHead
     modify tail
     return i
 
