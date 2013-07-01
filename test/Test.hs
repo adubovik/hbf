@@ -11,7 +11,7 @@ import Test.HUnit
 import Text.Printf
 
 import DSL
-import DSLCont
+import DSL.Expression
 import DSL.Lib
 
 import DSL.Compiler
@@ -176,20 +176,20 @@ divModTest = test (map mkTest testSrc)
               printChar ' '
               printInt r
 
-dslContTest :: Test
-dslContTest = test (map mkTest testSrc)
+dslExprTest :: Test
+dslExprTest = test (map mkTest testSrc)
   where
     testSrc :: [(Int,Int,Int)] = 
       [(1,2,3),(5,0,6),(0,0,0),(7,7,7),(1,1,1),(11,0,9)]
     mkTest (x,y,z) = 
       show [x,y,z] ~: t (printf "%d %d %d " x y z) ~=?= 
-                        (printf "%d %d" 
+                        (printf "%d %d"
                           ((x*x + y*y + z*z) `div` 3)
                           ((x + y + z) `div` 3))
     
     t = runOn prog
 
-    prog = execDSLCont $ do
+    prog = execDSLExpr $ do
       x <- readI
       y <- readI
       z <- readI
@@ -207,7 +207,7 @@ tests = test [ "const"          ~: constNil
              , "add"            ~: addTest
              , "reverse string" ~: reverseStringTest
              , "divmod"         ~: divModTest
-             , "dslCont"        ~: dslContTest
+             , "DSL expression"        ~: dslExprTest
              ]
 
 main :: IO ()

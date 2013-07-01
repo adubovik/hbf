@@ -17,7 +17,7 @@ library
   hs-source-dirs: src
   exposed-modules:
     DSL,
-    DSLCont,
+    DSL.Expression,
     DSL.Lib,
     DSL.Compiler,
     DSL.Interpreter,
@@ -53,7 +53,7 @@ executable hbfi
     Control.Monad.Free.Instances,
     Control.Monad.InOutMonad,
     DSL,
-    DSLCont,
+    DSL.Expression,
     Types,
     Parser,          
 

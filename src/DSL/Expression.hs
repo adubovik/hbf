@@ -4,10 +4,10 @@
  , TypeFamilies
  #-}
 
-module DSLCont
+module DSL.Expression
   ( u
   , (<!>)
-  , execDSLCont
+  , execDSLExpr
 
   , printI
   , printC
@@ -31,8 +31,8 @@ infixl 1 <!>
 (<!>) :: DSL r => (a -> r ()) -> C r a -> r ()
 (<!>) = flip runContT
 
-execDSLCont :: DSL r => C r a -> r ()
-execDSLCont x = (const $ return ()) <!> x
+execDSLExpr :: DSL r => C r a -> r ()
+execDSLExpr x = (const $ return ()) <!> x
 
 binOpCont :: DSL r =>
         (VarD r -> VarD r -> r ())
