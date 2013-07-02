@@ -2,7 +2,9 @@
    NoMonomorphismRestriction
  , ExistentialQuantification
  , RankNTypes
- , ScopedTypeVariables #-}
+ , ScopedTypeVariables
+ , PostfixOperators
+ #-}
 
 module Main(main) where
 
@@ -204,27 +206,42 @@ comparisonTest = test (map mkTest testSrc)
       [(i,j) | i <- [0..3], j <- [0..3]]
     mkTest (x,y) = 
       show [x,y] ~: t (printf "%d %d " x y) ~=?= 
-                        (concatMap (show . fromEnum) [x<y,x<=y,x==y])
+                        (concatMap (show . fromEnum) 
+                           [x<y,x<=y,x==y,x>y,x>=y,x/=y])
     
     t = runOn prog
 
-    prog = do
-      localVar $ \a -> do
-        readInt a
-        localVar $ \b -> do
-          readInt b
-          localVar $ \a' -> do
-            a' =: a
-            a' =<: b
-            printInt a'
+    prog = execDSLExpr $ do
+      a <- readI
+      b <- readI
+      printI $ u a  <: u b
+      printI $ u a <=: u b
+      printI $ u a ==: u b
+      printI $ u a  >: u b
+      printI $ u a >=: u b
+      printI $ u a /=: u b
 
-            a' =: a
-            a' =<=: b
-            printInt a'
+factorialTest :: Test
+factorialTest = test (map mkTest testSrc)
+  where
+    testSrc :: [Int] = [0..5]
+    fact n | n==0 = 1
+           | otherwise = n * fact (n-1)
 
-            a' =: a
-            a' ===: b
-            printInt a'
+    mkTest n = show n ~: t (printf "%d " n) ~=?= 
+                           (show $ fact n)
+    
+    t = runOn prog
+
+    -- FIXME: replace iteration with recursion
+    prog = localVar $ \n -> do
+      readInt n
+      localVar $ \r -> do
+        r += 1
+        while n $ do
+          r *=: n
+          n -=  1
+        printInt r
 
 tests :: Test
 tests = test [ "const"          ~: constNil
@@ -237,6 +254,7 @@ tests = test [ "const"          ~: constNil
              , "divmod"         ~: divModTest
              , "DSL expression" ~: dslExprTest
              , "comparison"     ~: comparisonTest
+             , "factorial"      ~: factorialTest
              ]
 
 main :: IO ()

@@ -9,6 +9,10 @@ module DSL.Expression
   , (<!>)
   , execDSLExpr
 
+  , ifThenElse
+
+  , (>:),(<:),(>=:),(<=:),(/=:),(==:)
+    
   , printI
   , printC
   , readI
@@ -23,11 +27,12 @@ import DSL.Lib
 
 type C = ContT ()
 
+-- | Helpers
+
 u :: VarD r -> C r (VarD r)
 u = return
 
 infixl 1 <!>
-
 (<!>) :: DSL r => (a -> r ()) -> C r a -> r ()
 (<!>) = flip runContT
 
@@ -48,7 +53,7 @@ binOpCont op xc yc = do
         t `op` y
         k t
 
--- | Pure actions
+-- | Arithmetics
 
 instance (DSL r, v ~ VarD r) => Num (C r v) where
   (+) = binOpCont (+=:)
@@ -73,10 +78,40 @@ instance (DSL r, v ~ VarD r) => Real (C r v) where
   toRational = undefined
 
 instance (DSL r, v ~ VarD r) => Integral (C r v) where
-  quotRem a b = (binOpCont (/=:) a b, binOpCont (%=:) a b)
+  quotRem a b = (binOpCont (//=:) a b, binOpCont (%=:) a b)
   divMod      = quotRem
 
   toInteger = undefined
+
+-- | Comparisons
+
+infix 4 >:,<:,>=:,<=:,==:,/=:
+(>:),(<:),(>=:),(<=:),(==:),(/=:) :: DSL r => 
+  C r (VarD r) ->
+  C r (VarD r) ->
+  C r (VarD r)
+(>:)  = binOpCont (=>:)
+(<:)  = flip (>:)
+(>=:) = binOpCont (=>=:)
+(<=:) = flip (>=:)
+(==:) = binOpCont (===:)
+(/=:) = binOpCont (=/=:)
+
+-- | Control flow
+
+ifThenElse :: DSL r
+  => C r (VarD r) -> C r (VarD r)
+  -> C r (VarD r) -> C r (VarD r)
+ifThenElse bc tc fc = do
+  b <- bc
+  t <- tc
+  f <- fc
+  ContT $ \k ->
+    localVar $ \res -> do
+      ifthen b
+        (res =: t)
+        (res =: f)
+      k res
 
 -- | IO
   
